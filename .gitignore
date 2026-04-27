@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# ChromaDB
+backend/chroma_db/
+
+# Mac OS
+.DS_Store
+
+# Frontend (as requested, ignoring the whole frontend folder for now)
+frontend/
