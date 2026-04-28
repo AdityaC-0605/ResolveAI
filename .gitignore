@@ -1,16 +1,32 @@
-# Python
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
-*$py.class
 venv/
-env/
+
+# ── Environment & Secrets ─────────────────────────────────────────────────────
 .env
 
-# ChromaDB
+# ── Databases ─────────────────────────────────────────────────────────────────
 backend/chroma_db/
+backend/feedback.db
+*.db
+*.sqlite
+*.sqlite3
 
-# Mac OS
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Node / Frontend ───────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+
+# Vite / build output
+dist/
+frontend/dist/
+.vite/
+
+# ── OS & IDE ──────────────────────────────────────────────────────────────────
 .DS_Store
-
-# Frontend (as requested, ignoring the whole frontend folder for now)
-frontend/
+.vscode/
+.idea/
