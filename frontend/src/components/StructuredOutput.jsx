@@ -8,7 +8,7 @@ import { UrgencyPill, SentimentBadge, ScoreBar, CopyButton } from './ui'
 import { submitFeedback } from '../api'
 
 export default function StructuredOutput({ classification: c, timing, complaintId }) {
-  const [fbSent, setFbSent]     = useState(false)
+  const [fbSent, setFbSent] = useState(false)
   const [fbLoading, setFbLoading] = useState(false)
   const [showReason, setShowReason] = useState(false)
 
@@ -23,43 +23,45 @@ export default function StructuredOutput({ classification: c, timing, complaintI
   }
 
   const confidencePct = Math.round(c.confidence * 100)
-  const confColor = c.confidence >= 0.8 ? 'from-mint to-cyan-400'
-                  : c.confidence >= 0.6 ? 'from-amber-400 to-orange-400'
-                  : 'from-coral to-red-400'
+  const confColor = c.confidence >= 0.8 ? 'from-cyan-500 to-cyan-400'
+    : c.confidence >= 0.6 ? 'from-amber-400 to-orange-400'
+      : 'from-pink-500 to-red-400'
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 }}
-      className="glass border-glow-mint overflow-hidden"
+      className="glass-card overflow-hidden"
     >
       {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.04]">
-        <div className="flex items-center gap-2">
-          <BrainCircuit className="w-4 h-4 text-mint" />
-          <h3 className="font-display font-semibold text-slate-200">Classification Result</h3>
+      <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-mint flex items-center justify-center">
+            <BrainCircuit className="w-4 h-4 text-white" />
+          </div>
+          <h3 className="font-semibold text-white">Classification Result</h3>
         </div>
         <div className="flex items-center gap-3">
           {c.escalate_to_human && (
-            <span className="flex items-center gap-1.5 text-xs font-mono text-amber-400 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <span className="flex items-center gap-1.5 text-xs font-mono text-amber-400 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
               <AlertTriangle className="w-3 h-3" />
               Escalate
             </span>
           )}
-          <span className="text-xs font-mono text-slate-500 flex items-center gap-1">
+          <span className="text-xs font-mono text-slate-500 flex items-center gap-1.5 bg-slate-800/50 px-2 py-1 rounded-lg">
             <Timer className="w-3 h-3" />{timing}ms
           </span>
         </div>
       </div>
 
-      <div className="p-6 space-y-5">
+      <div className="p-6 space-y-6">
         {/* Category + badges row */}
-        <div className="flex flex-wrap items-start gap-3">
+        <div className="flex flex-wrap items-start gap-4">
           <div>
-            <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-1">Category</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl font-display font-bold text-slate-100">{c.category}</span>
+            <p className="text-xs font-medium text-slate-500 mb-2">Category</p>
+            <div className="flex items-baseline gap-3">
+              <span className="text-2xl font-bold text-white">{c.category}</span>
               <span className="text-sm font-mono text-violet-400">{c.subcategory}</span>
             </div>
           </div>
@@ -71,36 +73,40 @@ export default function StructuredOutput({ classification: c, timing, complaintI
 
         {/* Confidence */}
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">Confidence</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-medium text-slate-500">Confidence</p>
             <span className={`text-sm font-mono font-bold ${
-              c.confidence >= 0.8 ? 'text-mint' : c.confidence >= 0.6 ? 'text-amber-400' : 'text-coral'
+              c.confidence >= 0.8 ? 'text-cyan-400' : c.confidence >= 0.6 ? 'text-amber-400' : 'text-pink-400'
             }`}>{confidencePct}%</span>
           </div>
           <ScoreBar value={c.confidence} color={confColor} />
         </div>
 
         {/* Assignment grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl p-3 border border-white/[0.04]" style={{ background: 'rgba(8,13,30,0.6)' }}>
-            <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-1">Assigned Team</p>
-            <div className="flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-violet-400" />
-              <span className="text-sm font-medium text-slate-200">{c.assigned_team}</span>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="glass-subtle p-4 rounded-xl">
+            <p className="text-xs font-medium text-slate-500 mb-2">Assigned Team</p>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                <Users className="w-4 h-4 text-violet-400" />
+              </div>
+              <span className="text-base font-semibold text-white">{c.assigned_team}</span>
             </div>
           </div>
-          <div className="rounded-xl p-3 border border-white/[0.04]" style={{ background: 'rgba(8,13,30,0.6)' }}>
-            <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-1">Est. Resolution</p>
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="text-sm font-medium text-slate-200">{c.estimated_resolution_hours}h SLA</span>
+          <div className="glass-subtle p-4 rounded-xl">
+            <p className="text-xs font-medium text-slate-500 mb-2">Est. Resolution</p>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-cyan-400" />
+              </div>
+              <span className="text-base font-semibold text-white">{c.estimated_resolution_hours}h SLA</span>
             </div>
           </div>
         </div>
 
         {/* Summary */}
-        <div className="rounded-xl p-4" style={{ background: 'rgba(0,240,181,0.04)', border: '1px solid rgba(0,240,181,0.1)' }}>
-          <p className="text-[10px] font-mono text-mint/60 uppercase tracking-widest mb-1.5">Summary</p>
+        <div className="rounded-xl p-5" style={{ background: 'linear-gradient(135deg, rgba(20, 184, 166, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%)', border: '1px solid rgba(20, 184, 166, 0.15)' }}>
+          <p className="text-xs font-medium text-cyan-400/60 mb-2">Summary</p>
           <p className="text-sm text-slate-300 leading-relaxed">{c.summary}</p>
         </div>
 
@@ -108,9 +114,9 @@ export default function StructuredOutput({ classification: c, timing, complaintI
         <div>
           <button
             onClick={() => setShowReason(r => !r)}
-            className="flex items-center gap-2 text-[10px] font-mono text-slate-500 uppercase tracking-widest hover:text-slate-300 transition-colors mb-2"
+            className="flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-slate-300 transition-colors mb-3"
           >
-            <ChevronDown className={`w-3 h-3 transition-transform ${showReason ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-4 h-4 transition-transform ${showReason ? 'rotate-180' : ''}`} />
             Reasoning chain
           </button>
           <AnimatePresence>
@@ -120,7 +126,7 @@ export default function StructuredOutput({ classification: c, timing, complaintI
                 exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="rounded-xl p-4 relative" style={{ background: 'rgba(8,13,30,0.8)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                <div className="glass-subtle p-4 rounded-xl relative">
                   <div className="absolute top-3 right-3">
                     <CopyButton text={c.reasoning} />
                   </div>
@@ -133,21 +139,19 @@ export default function StructuredOutput({ classification: c, timing, complaintI
 
         {/* Action items */}
         <div>
-          <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-            <ListChecks className="w-3 h-3" /> Recommended Actions
+          <p className="text-xs font-medium text-slate-500 mb-3 flex items-center gap-2">
+            <ListChecks className="w-4 h-4" /> Recommended Actions
           </p>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {c.action_items.map((action, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.6 + i * 0.07 }}
-                className="flex items-start gap-2.5 p-2.5 rounded-lg"
-                style={{ background: 'rgba(8,13,30,0.5)', border: '1px solid rgba(255,255,255,0.03)' }}
+                className="flex items-start gap-3 p-3 rounded-lg bg-slate-900/40 border border-white/5"
               >
-                <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[9px] font-bold font-mono text-mint"
-                  style={{ background: 'rgba(0,240,181,0.08)', border: '1px solid rgba(0,240,181,0.2)' }}>
+                <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold text-cyan-400 bg-cyan-500/10 border border-cyan-500/20">
                   {i + 1}
                 </div>
                 <span className="text-sm text-slate-300">{action}</span>
@@ -157,21 +161,21 @@ export default function StructuredOutput({ classification: c, timing, complaintI
         </div>
 
         {/* Feedback */}
-        <div className="flex items-center justify-between pt-2 border-t border-white/[0.04]">
-          <p className="text-xs text-slate-600">Was this classification correct?</p>
+        <div className="flex items-center justify-between pt-4 border-t border-white/5">
+          <p className="text-sm text-slate-500">Was this classification correct?</p>
           {fbSent ? (
-            <span className="flex items-center gap-1.5 text-xs font-mono text-mint">
-              <CheckCircle2 className="w-3.5 h-3.5" /> Feedback recorded
+            <span className="flex items-center gap-2 text-sm font-medium text-cyan-400">
+              <CheckCircle2 className="w-4 h-4" /> Feedback recorded
             </span>
           ) : (
             <div className="flex gap-2">
               <button disabled={fbLoading} onClick={() => sendFeedback(true)}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg text-emerald-400 hover:bg-emerald-500/10 border border-white/[0.04] hover:border-emerald-500/20 transition-all">
-                <ThumbsUp className="w-3 h-3" /> Yes
+                className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/20 transition-all">
+                <ThumbsUp className="w-4 h-4" /> Yes
               </button>
               <button disabled={fbLoading} onClick={() => sendFeedback(false)}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg text-coral hover:bg-coral/10 border border-white/[0.04] hover:border-coral/20 transition-all">
-                <ThumbsDown className="w-3 h-3" /> No
+                className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg text-pink-400 hover:bg-pink-500/10 border border-pink-500/20 transition-all">
+                <ThumbsDown className="w-4 h-4" /> No
               </button>
             </div>
           )}
