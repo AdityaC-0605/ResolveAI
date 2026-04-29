@@ -9,14 +9,14 @@ import { StatCard } from '../components/ui'
 import { getStats, getHealth } from '../api'
 
 const ACTIONS = [
-  { to: '/classify',  icon: Zap,       label: 'Classify',          sub: 'Analyse a single complaint',    accent: 'from-mint/20 to-cyan-400/10',  border: 'border-mint/15' },
-  { to: '/batch',     icon: Layers,    label: 'Batch Mode',        sub: 'Process up to 50 at once',      accent: 'from-violet-400/15 to-violet-600/5', border: 'border-violet-400/15' },
-  { to: '/knowledge', icon: BookOpen,  label: 'Knowledge Base',    sub: 'Manage complaint corpus',       accent: 'from-amber-400/15 to-orange-400/5',  border: 'border-amber-400/15' },
-  { to: '/analytics', icon: BarChart3, label: 'Analytics',         sub: 'Accuracy & trends',             accent: 'from-coral/15 to-pink-500/5',   border: 'border-coral/15'  },
+  { to: '/classify', icon: Zap, label: 'Classify', sub: 'Single complaint analysis', accent: 'from-cyan-500/20 to-cyan-600/10', border: 'border-cyan-500/20', iconBg: 'bg-cyan-500/20 text-cyan-400' },
+  { to: '/batch', icon: Layers, label: 'Batch Mode', sub: 'Process up to 50 at once', accent: 'from-violet-500/20 to-violet-600/10', border: 'border-violet-500/20', iconBg: 'bg-violet-500/20 text-violet-400' },
+  { to: '/knowledge', icon: BookOpen, label: 'Knowledge Base', sub: 'Manage complaint corpus', accent: 'from-amber-500/20 to-amber-600/10', border: 'border-amber-500/20', iconBg: 'bg-amber-500/20 text-amber-400' },
+  { to: '/analytics', icon: BarChart3, label: 'Analytics', sub: 'Accuracy & trends', accent: 'from-pink-500/20 to-pink-600/10', border: 'border-pink-500/20', iconBg: 'bg-pink-500/20 text-pink-400' },
 ]
 
 export default function DashboardPage() {
-  const [stats, setStats]   = useState(null)
+  const [stats, setStats] = useState(null)
   const [health, setHealth] = useState(null)
 
   useEffect(() => {
@@ -25,125 +25,139 @@ export default function DashboardPage() {
   }, [])
 
   return (
-    <div className="min-h-full">
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <div className="relative pt-12 pb-10 px-8">
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md mb-6 bg-teal-500/10 border border-teal-500/20">
-            <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-            <span className="text-[10px] font-semibold text-teal-400 uppercase tracking-widest">Hybrid RAG · v2.0</span>
-          </div>
-          <h1 className="font-bold text-4xl text-slate-50 leading-tight mb-3">
-            Resolve<span className="text-gradient-primary">AI</span>
-          </h1>
-          <p className="text-slate-400 text-sm max-w-xl leading-relaxed">
-            BM25 + dense retrieval fused via RRF, powered by a local Ollama LLM.
-            <br />
-            <span className="text-slate-500">Zero data leaves your infrastructure.</span>
-          </p>
-        </motion.div>
-      </div>
+    <div className="min-h-full p-8">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mb-10"
+      >
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-subtle mb-4">
+          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+          <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Hybrid RAG v2.0</span>
+        </div>
+        <h1 className="text-4xl font-bold text-white mb-3">
+          Dashboard
+        </h1>
+        <p className="text-slate-400 text-lg max-w-xl">
+          Monitor system health, track classification metrics, and manage your AI pipeline.
+        </p>
+      </motion.div>
 
-      <div className="px-8 py-8 space-y-8">
+      <div className="space-y-8">
 
-        {/* ── Live stats ─────────────────────────────────────────────────── */}
+        {/* Stats Grid */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
         >
-          <StatCard label="Documents"         value={stats?.total_documents ?? '—'}  icon={Database}   color="text-mint" />
-          <StatCard label="Classifications"   value={stats?.total_classifications ?? '—'} icon={Activity} color="text-violet-400" />
-          <StatCard label="Avg Latency"       value={stats ? `${stats.avg_processing_ms}ms` : '—'} icon={Zap} color="text-amber-400" />
-          <StatCard label="Cache Hit Rate"    value={stats ? `${Math.round((stats.cache_hits/(stats.cache_hits+stats.cache_misses||1))*100)}%` : '—'} icon={TrendingUp} color="text-cyan-400" />
+          <StatCard label="Total Documents" value={stats?.total_documents ?? '—'} icon={Database} color="text-cyan-400" />
+          <StatCard label="Classifications" value={stats?.total_classifications ?? '—'} icon={Activity} color="text-violet-400" />
+          <StatCard label="Avg Latency" value={stats ? `${stats.avg_processing_ms}ms` : '—'} icon={Zap} color="text-amber-400" />
+          <StatCard label="Cache Hit Rate" value={stats ? `${Math.round((stats.cache_hits / (stats.cache_hits + stats.cache_misses || 1)) * 100)}%` : '—'} icon={TrendingUp} color="text-mint" />
         </motion.div>
 
-        {/* ── Quick actions ──────────────────────────────────────────────── */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <h2 className="font-display font-semibold text-slate-300 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {ACTIONS.map(({ to, icon: Icon, label, sub, accent, border }) => (
+        {/* Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+        >
+          <h2 className="text-xl font-semibold text-white mb-5">Quick Actions</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {ACTIONS.map(({ to, icon: Icon, label, sub, accent, border, iconBg }) => (
               <Link key={to} to={to}>
                 <motion.div
-                  whileHover={{ y: -3, scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`glass glass-hover rounded-2xl p-5 h-full cursor-pointer bg-gradient-to-br ${accent} border ${border}`}
+                  whileHover={{ y: -4, scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  className={`glass-card p-5 h-full cursor-pointer bg-gradient-to-br ${accent} border ${border}`}
                 >
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-4"
-                    style={{ background: 'rgba(255,255,255,0.05)' }}>
-                    <Icon className="w-5 h-5 text-slate-300" />
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${iconBg}`}>
+                    <Icon className="w-5 h-5" />
                   </div>
-                  <p className="font-display font-semibold text-slate-200 mb-1">{label}</p>
-                  <p className="text-xs text-slate-500">{sub}</p>
-                  <ArrowRight className="w-3.5 h-3.5 text-slate-600 mt-3" />
+                  <p className="font-semibold text-white text-lg mb-1">{label}</p>
+                  <p className="text-sm text-slate-400">{sub}</p>
+                  <ArrowRight className="w-4 h-4 text-slate-500 mt-4" />
                 </motion.div>
               </Link>
             ))}
           </div>
         </motion.div>
 
-        {/* ── System status ──────────────────────────────────────────────── */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-          <h2 className="font-display font-semibold text-slate-300 mb-4">System Status</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* System Status */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+        >
+          <h2 className="text-xl font-semibold text-white mb-5">System Status</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { label: 'Ollama LLM',     ok: health?.ollama_reachable,   icon: Cpu,      detail: stats?.llm_model ?? '—' },
-              { label: 'BM25 Index',     ok: health?.bm25_index_ready,   icon: Activity, detail: `${stats?.total_documents ?? 0} docs indexed` },
-              { label: 'Vector DB',      ok: health?.vector_db_count > 0, icon: Server,   detail: `ChromaDB · ${health?.vector_db_count ?? 0} embeddings` },
-            ].map(({ label, ok, icon: Icon, detail }) => (
-              <div key={label} className="glass scanline-container rounded-2xl p-4 flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0
-                  ${ok ? 'bg-mint/10 border border-mint/20' : 'bg-coral/10 border border-coral/20'}`}>
-                  <Icon className={`w-5 h-5 ${ok ? 'text-mint' : 'text-coral'}`} />
+              { label: 'Ollama LLM', ok: health?.ollama_reachable, icon: Cpu, detail: stats?.llm_model ?? '—', color: 'cyan' },
+              { label: 'BM25 Index', ok: health?.bm25_index_ready, icon: Activity, detail: `${stats?.total_documents ?? 0} docs indexed`, color: 'violet' },
+              { label: 'Vector DB', ok: health?.vector_db_count > 0, icon: Server, detail: `ChromaDB · ${health?.vector_db_count ?? 0} vectors`, color: 'pink' },
+            ].map(({ label, ok, icon: Icon, detail, color }) => (
+              <div key={label} className="glass-card p-5 flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0
+                  ${ok ? `bg-${color}-500/10 border border-${color}-500/20` : 'bg-pink-500/10 border border-pink-500/20'}`}>
+                  <Icon className={`w-5 h-5 ${ok ? `text-${color}-400` : 'text-pink-400'}`} />
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="font-display font-semibold text-slate-200 text-sm">{label}</p>
-                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${ok ? 'bg-mint/10 text-mint' : 'bg-coral/10 text-coral'}`}>
+                    <p className="font-semibold text-white text-sm">{label}</p>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${ok ? 'bg-cyan-500/10 text-cyan-400' : 'bg-pink-500/10 text-pink-400'}`}>
                       {ok ? 'OK' : 'ERR'}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 font-mono mt-0.5">{detail}</p>
+                  <p className="text-xs text-slate-500 font-mono mt-1 truncate">{detail}</p>
                 </div>
               </div>
             ))}
           </div>
         </motion.div>
 
-        {/* ── Architecture mini-map ──────────────────────────────────────── */}
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
-          <h2 className="font-display font-semibold text-slate-300 mb-4">Pipeline Architecture</h2>
-          <div className="glass rounded-2xl p-6">
-            <div className="flex items-center gap-2 flex-wrap">
+        {/* Pipeline Architecture */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+        >
+          <h2 className="text-xl font-semibold text-white mb-5">Pipeline Architecture</h2>
+          <div className="glass-card p-6">
+            <div className="flex items-center gap-2 flex-wrap justify-center">
               {[
-                { label: 'Query',          color: 'bg-slate-700 text-slate-300' },
-                { label: '→',              color: 'text-slate-600', arrow: true },
-                { label: 'BM25 Search',    color: 'bg-violet-500/15 text-violet-400 border border-violet-500/20' },
-                { label: '+',              color: 'text-slate-600', arrow: true },
-                { label: 'Dense Search',   color: 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/20' },
-                { label: '→',              color: 'text-slate-600', arrow: true },
-                { label: 'RRF Fusion',     color: 'bg-amber-500/15 text-amber-400 border border-amber-500/20' },
-                { label: '→',             color: 'text-slate-600', arrow: true },
-                { label: 'Re-rank',        color: 'bg-orange-500/15 text-orange-400 border border-orange-500/20' },
-                { label: '→',             color: 'text-slate-600', arrow: true },
-                { label: 'LLM Generate',   color: 'bg-mint/10 text-mint border border-mint/20' },
-                { label: '→',             color: 'text-slate-600', arrow: true },
-                { label: 'JSON Output',    color: 'bg-slate-700 text-slate-300' },
+                { label: 'Query', color: 'bg-slate-700/50 text-slate-300' },
+                { label: '→', color: 'text-slate-600 text-xl', arrow: true },
+                { label: 'BM25', color: 'bg-violet-500/15 text-violet-400 border border-violet-500/20' },
+                { label: '+', color: 'text-slate-600 text-xl', arrow: true },
+                { label: 'Dense', color: 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/20' },
+                { label: '→', color: 'text-slate-600 text-xl', arrow: true },
+                { label: 'RRF', color: 'bg-amber-500/15 text-amber-400 border border-amber-500/20' },
+                { label: '→', color: 'text-slate-600 text-xl', arrow: true },
+                { label: 'Re-rank', color: 'bg-pink-500/15 text-pink-400 border border-pink-500/20' },
+                { label: '→', color: 'text-slate-600 text-xl', arrow: true },
+                { label: 'LLM', color: 'bg-mint/10 text-mint border border-mint/20' },
+                { label: '→', color: 'text-slate-600 text-xl', arrow: true },
+                { label: 'JSON', color: 'bg-slate-700/50 text-slate-300' },
               ].map(({ label, color, arrow }, i) => (
-                <span key={i} className={`${arrow ? 'text-lg font-bold' : `px-3 py-1.5 rounded-lg text-xs font-mono`} ${color}`}>
+                <span key={i} className={`${arrow ? color : `px-3 py-1.5 rounded-lg text-xs font-mono ${color}`}`}>
                   {label}
                 </span>
               ))}
             </div>
-            <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-mono">
+            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 { k: 'Keyword Weight', v: stats?.keyword_weight ? `${stats.keyword_weight * 100}%` : '35%' },
                 { k: 'Semantic Weight', v: stats?.semantic_weight ? `${stats.semantic_weight * 100}%` : '65%' },
-                { k: 'Fusion Method',  v: 'RRF k=60' },
-                { k: 'Embed Model',    v: stats?.embedding_model?.split(' ')[0] ?? 'nomic-embed-text' },
+                { k: 'Fusion Method', v: 'RRF k=60' },
+                { k: 'Embed Model', v: stats?.embedding_model?.split(' ')[0] ?? 'nomic-embed' },
               ].map(({ k, v }) => (
-                <div key={k} className="rounded-lg px-3 py-2" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                  <p className="text-slate-600 mb-0.5">{k}</p>
-                  <p className="text-mint">{v}</p>
+                <div key={k} className="glass-subtle p-3 rounded-lg">
+                  <p className="text-xs text-slate-500 mb-1">{k}</p>
+                  <p className="text-sm font-mono text-cyan-400">{v}</p>
                 </div>
               ))}
             </div>
