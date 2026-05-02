@@ -1,26 +1,28 @@
-# ── Core API ──────────────────────────────────────────────────────────────────
+# NeuralTriage v2 — all enhancements
+
+# Core
 fastapi==0.115.0
 uvicorn[standard]==0.32.0
 python-multipart==0.0.12
-
-# ── Validation & Settings ─────────────────────────────────────────────────────
 pydantic==2.9.2
-pydantic-settings==2.6.1        # replaces manual env parsing
-
-# ── HTTP Client ───────────────────────────────────────────────────────────────
+pydantic-settings==2.6.1
 httpx==0.27.2
 
-# ── Vector DB ─────────────────────────────────────────────────────────────────
+# Vector DB & Retrieval
 chromadb==0.5.20
-
-# ── Retrieval ─────────────────────────────────────────────────────────────────
 rank-bm25==0.2.2
 scikit-learn==1.5.2
 numpy==1.26.4
 
-# ── Optional: real cross-encoder re-ranking (GPU recommended, CPU works fine)
-# Uncomment when you want to upgrade from TF-IDF to neural re-ranking:
-# sentence-transformers==3.3.0
+# Enhancement 1 — Neural Re-ranking
+sentence-transformers==3.3.0
 
-# ── Observability (optional) ──────────────────────────────────────────────────
-# prometheus-fastapi-instrumentator==7.0.0   # expose /metrics for Prometheus
+# Enhancement 3 — Prometheus
+prometheus-client==0.21.0
+prometheus-fastapi-instrumentator==7.0.0
+
+# Enhancement 4 — Multi-language
+langdetect==1.0.9
+
+# Enhancement 6 — Redis (only needed when REDIS_ENABLED=true)
+redis==5.2.0
