@@ -1,115 +1,72 @@
 import React, { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Send, RotateCcw, FileText, ChevronDown } from 'lucide-react'
+import { Send, RotateCcw, ChevronDown } from 'lucide-react'
+import { Spinner } from './ui'
 
 const EXAMPLES = [
-  { label: 'Double charge', text: "I was charged twice for my monthly subscription — $49.99 appears twice on my credit card statement dated March 15th. This is unacceptable, I need an immediate refund!" },
-  { label: 'App crash', text: "The app crashes every time I try to upload a photo. I've reinstalled it three times on my iPhone 14 Pro with iOS 17.4. This has been happening for a week now." },
-  { label: 'Account takeover', text: "Someone accessed my account and changed the email address. I can no longer log in and I see purchases I didn't authorise. This is a security breach — help!" },
-  { label: 'Damaged package', text: "My package arrived completely crushed. The glass items inside are shattered. The box was clearly mishandled during shipping. I need full compensation immediately." },
-  { label: 'Refund delay', text: "My refund was promised within 5-7 business days but it's been 3 weeks. Reference: REF-99123. Where is my money?" },
+  { label: 'Double charge',    text: "I was charged twice — $49.99 appears twice on my March statement. Unacceptable. I need an immediate refund." },
+  { label: 'App crash',        text: "The app crashes every time I upload a photo. Reinstalled 3 times on iPhone 14 Pro iOS 17.4. Week-long issue." },
+  { label: 'Account takeover', text: "Someone changed my account email. I can't log in and see purchases I never made. This is a security breach!" },
+  { label: 'Damaged package',  text: "Package arrived crushed. Glass items shattered. Clear mishandling during shipping. Need full compensation." },
+  { label: 'Refund delay',     text: "Refund promised within 5-7 days — it's been 3 weeks. Reference: REF-99123. Where is my money?" },
 ]
 
 export default function ComplaintInput({ onSubmit, loading }) {
-  const [text, setText] = useState('')
-  const [showExamples, setShow] = useState(false)
-  const textareaRef = useRef(null)
+  const [text, setText]         = useState('')
+  const [showEx, setShowEx]     = useState(false)
+  const ref                     = useRef(null)
 
-  const submit = (e) => {
-    e?.preventDefault()
-    if (text.trim().length >= 5 && !loading) onSubmit(text.trim())
-  }
-
-  const loadExample = (ex) => {
-    setText(ex.text)
-    setShow(false)
-    setTimeout(() => textareaRef.current?.focus(), 50)
-  }
-
-  const pct = Math.min(100, Math.round((text.length / 5000) * 100))
+  const submit = e => { e?.preventDefault(); if (text.trim().length >= 5 && !loading) onSubmit(text.trim()) }
 
   return (
-    <div className="glass-card p-6 space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-lg text-white flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-violet-500 flex items-center justify-center">
-            <FileText className="w-4 h-4 text-white" />
+    <div className="panel-accent panel">
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-acid" />
+          <span className="text-[10px] font-mono uppercase tracking-widest text-ghost">Input</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono text-dim">{text.length}/5000</span>
+          <div className="relative">
+            <button onClick={() => setShowEx(s => !s)}
+              className="btn text-[9px] flex items-center gap-1 py-1 px-2">
+              Examples <ChevronDown className={`w-3 h-3 transition-transform ${showEx ? 'rotate-180' : ''}`} />
+            </button>
+            {showEx && (
+              <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                className="absolute right-0 top-full mt-1 w-64 z-50 border border-border"
+                style={{ background: '#0a0c14' }}>
+                {EXAMPLES.map((ex, i) => (
+                  <button key={i} onClick={() => { setText(ex.text); setShowEx(false); setTimeout(() => ref.current?.focus(), 50) }}
+                    className="w-full text-left px-3 py-2.5 text-[11px] font-mono text-ghost hover:text-silver hover:bg-edge border-b border-border last:border-0 transition-colors">
+                    <span className="text-acid">[{String(i+1).padStart(2,'0')}]</span> {ex.label}
+                  </button>
+                ))}
+              </motion.div>
+            )}
           </div>
-          Customer Complaint
-        </h2>
-        <div className="relative">
-          <button
-            onClick={() => setShow(s => !s)}
-            className="btn-ghost text-xs flex items-center gap-1.5"
-          >
-            Examples <ChevronDown className={`w-3 h-3 transition-transform ${showExamples ? 'rotate-180' : ''}`} />
-          </button>
-          {showExamples && (
-            <motion.div
-              initial={{ opacity: 0, y: -6, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6 }}
-              className="absolute right-0 top-full mt-2 w-72 rounded-xl overflow-hidden z-50"
-              style={{ background: 'rgba(17, 24, 39, 0.98)', border: '1px solid rgba(255,255,255,0.08)', boxShadow: '0 20px 40px rgba(0,0,0,0.6)' }}
-            >
-              {EXAMPLES.map((ex, i) => (
-                <button
-                  key={i}
-                  onClick={() => loadExample(ex)}
-                  className="w-full text-left px-4 py-3 text-sm text-slate-400 hover:text-slate-200 hover:bg-white/[0.03] transition-colors border-b border-white/[0.03] last:border-0"
-                >
-                  <span className="font-medium text-slate-300 block mb-1">{ex.label}</span>
-                  <p className="text-xs text-slate-500 line-clamp-1">{ex.text.slice(0, 60)}…</p>
-                </button>
-              ))}
-            </motion.div>
-          )}
         </div>
       </div>
 
-      {/* Input Area */}
-      <form onSubmit={submit}>
-        <div className="group relative rounded-xl bg-slate-900/40 border border-white/5 p-1 transition-all duration-300 focus-within:ring-2 focus-within:ring-cyan-500/50 focus-within:border-cyan-500/30">
-          <textarea
-            ref={textareaRef}
-            value={text}
-            onChange={e => setText(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit() }}
-            placeholder="Paste or type the customer complaint here…"
-            className="w-full h-32 bg-transparent resize-none leading-relaxed text-slate-200 placeholder:text-slate-600 focus:outline-none"
-          />
-          {/* Character counter */}
-          <div className="absolute bottom-2 right-2 flex items-center gap-3">
-            <span className="text-[10px] font-mono text-slate-600">{text.length}/5000</span>
-            <svg className="w-6 h-6 -rotate-90" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="9" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2" />
-              <circle cx="12" cy="12" r="9" fill="none" stroke={pct > 90 ? '#ec4899' : '#06b6d4'}
-                strokeWidth="2" strokeDasharray={`${2 * Math.PI * 9}`}
-                strokeDashoffset={`${2 * Math.PI * 9 * (1 - pct / 100)}`}
-                style={{ transition: 'stroke-dashoffset 0.3s' }} />
-            </svg>
-          </div>
-        </div>
+      {/* Textarea */}
+      <form onSubmit={submit} className="p-4 space-y-3">
+        <textarea ref={ref} value={text} onChange={e => setText(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit() }}
+          placeholder="// paste or type customer complaint..."
+          className="input h-40 w-full text-[13px] leading-relaxed" />
 
-        {/* Actions */}
-        <div className="flex items-center justify-between mt-4">
+        <div className="flex items-center justify-between">
           <button type="button" onClick={() => setText('')} disabled={!text}
-            className="btn-ghost text-xs disabled:opacity-30">
+            className="btn py-1.5 px-3 text-[10px] disabled:opacity-20">
             <RotateCcw className="w-3 h-3" /> Clear
           </button>
-          <p className="text-[10px] text-slate-600 font-mono">⌘+Enter to submit</p>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            disabled={loading || text.length < 5}
-            className="btn-primary"
-          >
-            {loading ? (
-              <><div className="w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin" /> Analysing…</>
-            ) : (
-              <><Send className="w-4 h-4" /> Classify</>
-            )}
+          <span className="text-[9px] font-mono text-dim">⌘+Enter</span>
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+            disabled={loading || text.length < 5} className="btn btn-acid py-1.5 px-4 text-[10px]">
+            {loading
+              ? <><Spinner size="sm" /> Analysing...</>
+              : <><Send className="w-3 h-3" /> Classify</>}
           </motion.button>
         </div>
       </form>
