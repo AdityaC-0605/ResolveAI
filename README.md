@@ -70,18 +70,38 @@ Every classification includes:
 
 ```text
 ├── backend/
-│   ├── main.py          # FastAPI entry & endpoints
-│   ├── retrieval.py     # Hybrid search engine (BM25 + Vector)
-│   ├── llm_engine.py    # Local LLM integration & JSON parsing
-│   ├── models.py        # Pydantic schemas & data types
-│   ├── feedback.py      # SQLite store for classification analytics
-│   └── config.py        # Environment-driven configuration
+│   ├── main.py              # FastAPI entry & endpoints
+│   ├── retrieval.py         # Hybrid search engine (BM25 + Vector)
+│   ├── llm_engine.py        # Local LLM integration & JSON parsing
+│   ├── models.py            # Pydantic schemas & data types
+│   ├── feedback.py          # SQLite store for classification analytics
+│   ├── config.py            # Environment-driven configuration
+│   ├── cache.py             # In-memory TTL caching logic
+│   ├── redis_cache.py       # Distributed Redis caching layer
+│   ├── few_shot_refresh.py  # Dynamic prompt refresher logic
+│   ├── hyde.py              # Hypothetical document embeddings (HyDE)
+│   ├── language.py          # Multilingual processing & LangDetect
+│   ├── metrics.py           # Prometheus observability metrics
+│   ├── middleware.py        # Rate limiting, auth, and logging
+│   ├── reranker.py          # Cross-encoder neural reranking
+│   ├── seed_data.py         # Knowledge base initialization
+│   ├── MIGRATION.md         # V2 enhancement configuration guide
+│   └── requirements.txt     # Python dependencies
 └── frontend/
-    ├── src/
-    │   ├── pages/       # Dashboard, Batch, Classify, Analytics, Knowledge
-    │   ├── components/  # ComplaintInput, RetrievalPipeline, StructuredOutput
-    │   └── hooks/       # useComplaintPipeline custom hook
-    └── tailwind.config.js
+    ├── index.html           # HTML entry point
+    ├── package.json         # NPM dependencies
+    ├── vite.config.js       # Vite build configuration
+    ├── tailwind.config.js   # Tailwind CSS design system config
+    ├── postcss.config.js    # PostCSS config
+    ├── .eslintrc.json       # ESLint rules
+    └── src/
+        ├── main.jsx         # React application entry
+        ├── App.jsx          # React router & route definitions
+        ├── api.js           # Centralised fetch API calls
+        ├── index.css        # Global styles & glassmorphism utilities
+        ├── pages/           # Landing, Dashboard, Classify, Batch, Knowledge, Analytics
+        ├── components/      # UI components, ParticleField, Layout, Sidebar
+        └── hooks/           # useComplaintPipeline custom streaming hook
 ```
 
 ---
