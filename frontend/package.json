@@ -1,7 +1,7 @@
 {
-  "name": "complaint-rag-ui",
+  "name": "resolveai-ui",
   "private": true,
-  "version": "2.0.0",
+  "version": "3.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,19 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "clsx": "^2.1.1",
-    "framer-motion": "^11.11.0",
-    "lucide-react": "^0.460.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.30.3",
+    "react-router-dom": "^6.27.0",
+    "framer-motion": "^11.11.0",
+    "lucide-react": "^0.460.0",
+    "three": "^0.169.0",
     "recharts": "^2.13.0",
-    "tailwind-merge": "^2.5.4",
-    "three": "^0.169.0"
+    "clsx": "^2.1.1"
   },
   "devDependencies": {
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",

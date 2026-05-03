@@ -86,7 +86,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="NeuralTriage — Hybrid RAG Complaint Classifier",
+    title="ResolveAI — Hybrid RAG Complaint Classifier",
     version="2.0.0",
     lifespan=lifespan,
 )

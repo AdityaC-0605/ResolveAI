@@ -1,4 +1,4 @@
-# NeuralTriage v2 — Enhancement Migration Guide
+# ResolveAI v2 — Enhancement Migration Guide
 
 Quick reference for enabling each enhancement. All are **off by default** where
 they require extra dependencies or services, so the base system keeps working

@@ -41,7 +41,8 @@ npm run dev
 - **Backend**: FastAPI, Pydantic v2, ChromaDB (Vector Store), Rank-BM25.
 - **AI/LLM**: Ollama (llama3.2/mistral), nomic-embed-text.
 - **Frontend**: React 18, Tailwind CSS, Framer Motion (Animations), Vite.
-- **Infrastructure**: Redis/Memory Cache, SQLite (Feedback), Docker.
+- **Infrastructure & Monitoring**: Redis (Distributed Caching), Prometheus (Telemetry), LangDetect (Multilingual).
+- **Data Store**: SQLite (Feedback & System Configurations).
 
 ---
 
@@ -49,10 +50,12 @@ npm run dev
 
 ResolveAI follows a sophisticated RAG (Retrieval-Augmented Generation) pipeline:
 
-1.  **Hybrid Retrieval**: Parallel execution of BM25 keyword search and HNSW vector search.
-2.  **RRF Fusion**: Results are combined using **Reciprocal Rank Fusion** to balance exact matches and semantic intent.
-3.  **Lightweight Re-ranking**: Top candidates are re-scored using a TF-IDF cross-attention mechanism.
-4.  **Structured Inference**: Ollama processes the context to generate a validated JSON response.
+1.  **Multilingual Pre-processing**: Auto-detection and English translation of complaints via LangDetect.
+2.  **High-Speed Caching**: Redis-backed cache layer checks for exact matches to serve instant results.
+3.  **Hybrid Retrieval**: Parallel execution of BM25 keyword search and HNSW vector search.
+4.  **RRF Fusion & Re-ranking**: Results are combined using Reciprocal Rank Fusion, then re-scored using a TF-IDF cross-attention mechanism.
+5.  **Dynamic Few-Shot**: System continuously curates and injects the most relevant historical corrections into the prompt.
+6.  **Structured Inference**: Ollama processes the context to generate a validated JSON response.
 
 ### Structured Output Schema
 Every classification includes:
@@ -86,9 +89,10 @@ Every classification includes:
 ## 📊 Monitoring & Analytics
 
 ResolveAI includes built-in endpoints for operational visibility:
-- **`/health`**: Dependency-aware health checks (Ollama + DB).
+- **`/health`**: Dependency-aware health checks (Ollama, Redis, Vector DB).
 - **`/stats`**: Real-time metrics on latency, cache hits, and retrieval performance.
 - **`/analytics`**: Accuracy trends based on human-in-the-loop feedback.
+- **`/metrics`**: Prometheus-compatible endpoint for Grafana observability dashboards.
 
 ---
 

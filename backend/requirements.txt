@@ -1,4 +1,4 @@
-# NeuralTriage v2 — all enhancements
+# ResolveAI v2 — all enhancements
 
 # Core
 fastapi==0.115.0
