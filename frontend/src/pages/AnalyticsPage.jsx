@@ -1,79 +1,85 @@
 import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend,
+  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, CartesianGrid,
 } from 'recharts'
-import { BarChart3, TrendingUp, Target, RefreshCw, Trash2, AlertTriangle } from 'lucide-react'
-import { StatCard, SectionHeader, Spinner } from '../components/ui'
+import { RefreshCw, Trash2, Target, BarChart3, TrendingUp, AlertTriangle } from 'lucide-react'
+import { StatBox, SectionHeader, Spinner, Tag } from '../components/ui'
 import { getAnalytics, getStats, clearCache } from '../api'
 
-const COLORS = ['#06b6d4', '#8b5cf6', '#ec4899', '#f59e0b', '#3b82f6', '#a78bfa', '#34d399']
+const COLORS = ['#d4f43c','#2ee8d4','#9b6fff','#f5a623','#ff4d6a','#60a5fa','#34d399']
 
-const CustomTooltip = ({ active, payload, label }) => {
+const TT = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="glass px-3 py-2 text-xs font-mono border border-cyan-500/20">
-      <p className="text-slate-400 mb-1">{label}</p>
-      {payload.map((p, i) => (
-        <p key={i} style={{ color: p.color }}>{p.name}: {typeof p.value === 'number' ? p.value.toFixed ? p.value.toFixed(3) : p.value : p.value}</p>
-      ))}
+    <div className="panel px-2.5 py-2 text-[10px] font-mono" style={{ borderColor: 'rgba(212,244,60,0.2)' }}>
+      <p className="text-dim mb-1">{label}</p>
+      {payload.map((p, i) => <p key={i} style={{ color: p.color }}>{p.name}: {typeof p.value === 'number' ? p.value.toFixed(1) : p.value}</p>)}
     </div>
   )
 }
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState(null)
-  const [stats, setStats] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [clearing, setClearing] = useState(false)
+  const [stats, setStats]         = useState(null)
+  const [loading, setLoading]     = useState(false)
+  const [clearing, setClearing]   = useState(false)
 
   const load = async () => {
     setLoading(true)
-    try {
-      const [a, s] = await Promise.all([getAnalytics(), getStats()])
-      setAnalytics(a); setStats(s)
-    } catch {}
+    try { await Promise.all([getAnalytics().then(setAnalytics), getStats().then(setStats)]) } catch {}
     setLoading(false)
   }
 
   useEffect(() => { load() }, [])
 
-  const handleClearCache = async () => {
+  const handleClear = async () => {
     setClearing(true)
     try { await clearCache(); await load() } catch {}
     setClearing(false)
   }
 
-  const categoryData = React.useMemo(() => {
+  const catData = React.useMemo(() => {
     if (!analytics?.recent_misclassifications?.length) return []
-    const counts = {}
-    analytics.recent_misclassifications.forEach(r => {
-      const cat = r.correct_cat || 'Unknown'
-      counts[cat] = (counts[cat] || 0) + 1
-    })
-    return Object.entries(counts).map(([name, value]) => ({ name, value }))
+    const c = {}
+    analytics.recent_misclassifications.forEach(r => { const k = r.correct_cat || 'Unknown'; c[k] = (c[k]||0)+1 })
+    return Object.entries(c).map(([name, value]) => ({ name, value }))
   }, [analytics])
 
-  const sparkData = React.useMemo(() => {
+  const latencyData = React.useMemo(() => {
     if (!stats) return []
     return Array.from({ length: 12 }, (_, i) => ({
-      t: `${i + 1}`,
-      ms: Math.max(200, (stats.avg_processing_ms || 1500) * (0.7 + 0.6 * Math.random())),
+      t: `${i+1}`, ms: Math.max(150, (stats.avg_processing_ms || 1200) * (0.7 + 0.6 * Math.random()))
     }))
   }, [stats])
 
   const acc = analytics?.accuracy
 
+  const CONFIG_ROWS = [
+    { k: 'LLM Model',       v: stats?.llm_model ?? '—' },
+    { k: 'Embed Model',     v: stats?.embedding_model?.split(' ')[0] ?? '—' },
+    { k: 'Fusion',          v: stats?.fusion_method ?? 'RRF k=60' },
+    { k: 'Keyword Weight',  v: stats?.keyword_weight != null ? `${Math.round(stats.keyword_weight*100)}%` : '—' },
+    { k: 'Semantic Weight', v: stats?.semantic_weight != null ? `${Math.round(stats.semantic_weight*100)}%` : '—' },
+    { k: 'Total Docs',      v: stats?.total_documents ?? '—' },
+    { k: 'Cache Hits',      v: stats?.cache_hits ?? '—' },
+    { k: 'Index Status',    v: stats?.index_status ?? '—' },
+    { k: 'Cache Layer',     v: 'Redis (Distributed)' },
+    { k: 'Telemetry',       v: 'Prometheus (Active)' },
+    { k: 'Translation',     v: 'LangDetect (Auto)' },
+    { k: 'Few-Shot',        v: 'Dynamic (SQLite)' },
+  ]
+
   return (
-    <div className="p-8 max-w-6xl">
-      <SectionHeader title="Analytics" sub="Classification accuracy, latency and distribution">
-        <div className="flex gap-3">
-          <button onClick={handleClearCache} disabled={clearing} className="btn-secondary text-sm">
-            {clearing ? <Spinner size="sm" /> : <><Trash2 className="w-4 h-4" /> Clear Cache</>}
+    <div className="px-6 py-6 max-w-6xl">
+      <SectionHeader title="Analytics" sub="Accuracy · latency · correction trends">
+        <div className="flex gap-2">
+          <button onClick={handleClear} disabled={clearing} className="btn btn-danger text-[10px] py-1.5">
+            {clearing ? <Spinner size="sm" /> : <><Trash2 className="w-3 h-3" /> Clear Cache</>}
           </button>
-          <button onClick={load} disabled={loading} className="btn-primary text-sm">
-            {loading ? <Spinner size="sm" /> : <><RefreshCw className="w-4 h-4" /> Refresh</>}
+          <button onClick={load} disabled={loading} className="btn text-[10px] py-1.5">
+            {loading ? <Spinner size="sm" /> : <><RefreshCw className="w-3 h-3" /> Refresh</>}
           </button>
         </div>
       </SectionHeader>
@@ -81,132 +87,113 @@ export default function AnalyticsPage() {
       {loading && !stats ? (
         <div className="flex justify-center py-24"><Spinner /></div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* KPIs */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <StatCard label="Accuracy" icon={Target} color="text-cyan-400"
-              value={acc?.accuracy != null ? `${(acc.accuracy * 100).toFixed(1)}%` : '—'}
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+            <StatBox label="Accuracy"        value={acc?.accuracy != null ? `${(acc.accuracy*100).toFixed(1)}%` : '—'} accent="#d4f43c"
               sub={acc ? `${acc.correct}/${acc.total} correct` : 'No feedback yet'} />
-            <StatCard label="Total Classified" icon={BarChart3} color="text-violet-400"
-              value={stats?.total_classifications ?? '—'} />
-            <StatCard label="Avg Latency" icon={TrendingUp} color="text-amber-400"
-              value={stats ? `${stats.avg_processing_ms}ms` : '—'} />
-            <StatCard label="Cache Efficiency" icon={RefreshCw} color="text-mint"
-              value={stats ? `${Math.round(stats.cache_hits / ((stats.cache_hits + stats.cache_misses) || 1) * 100)}%` : '—'}
+            <StatBox label="Classified"      value={stats?.total_classifications ?? '—'} accent="#9b6fff" />
+            <StatBox label="Avg Latency"     value={stats ? `${stats.avg_processing_ms}ms` : '—'} accent="#f5a623" />
+            <StatBox label="Cache Efficiency" value={stats ? `${Math.round(stats.cache_hits / ((stats.cache_hits + stats.cache_misses) || 1) * 100)}%` : '—'} accent="#2ee8d4"
               sub={stats ? `${stats.cache_hits} hits · ${stats.cache_misses} misses` : ''} />
           </motion.div>
 
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid lg:grid-cols-2 gap-4">
             {/* Latency chart */}
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-              className="glass-card p-6">
-              <h3 className="font-semibold text-white mb-1 text-sm">Latency Profile</h3>
-              <p className="text-xs text-slate-500 mb-4 font-mono">Estimated based on avg ± variance</p>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={sparkData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="t" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} width={40} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="ms" stroke="#06b6d4" strokeWidth={2} dot={false} name="ms" />
-                </LineChart>
-              </ResponsiveContainer>
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+              className="panel overflow-hidden">
+              <div className="px-4 py-3 border-b border-border">
+                <p className="text-[10px] font-mono uppercase tracking-widest text-ghost">Latency Profile</p>
+                <p className="text-[9px] font-mono text-dim mt-0.5">Estimated based on avg ± variance</p>
+              </div>
+              <div className="p-4">
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart data={latencyData}>
+                    <CartesianGrid strokeDasharray="2 4" stroke="rgba(30,35,52,0.8)" />
+                    <XAxis dataKey="t" tick={{ fontSize: 9, fill: '#4a566e', fontFamily: 'IBM Plex Mono' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 9, fill: '#4a566e', fontFamily: 'IBM Plex Mono' }} axisLine={false} tickLine={false} width={36} />
+                    <Tooltip content={<TT />} />
+                    <Line type="monotone" dataKey="ms" stroke="#d4f43c" strokeWidth={1.5} dot={false} name="ms" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </motion.div>
 
-            {/* Misclassified category pie */}
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-              className="glass-card p-6">
-              <h3 className="font-semibold text-white mb-1 text-sm">Correction Categories</h3>
-              <p className="text-xs text-slate-500 mb-4 font-mono">Categories from user feedback corrections</p>
-              {categoryData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie data={categoryData} cx="50%" cy="50%" outerRadius={75} dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      labelLine={false}
-                      style={{ fontSize: 10 }}>
-                      {categoryData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-48 flex flex-col items-center justify-center text-center">
-                  <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center mb-3">
-                    <AlertTriangle className="w-5 h-5 text-slate-600" />
+            {/* Corrections pie */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+              className="panel overflow-hidden">
+              <div className="px-4 py-3 border-b border-border">
+                <p className="text-[10px] font-mono uppercase tracking-widest text-ghost">Correction Categories</p>
+                <p className="text-[9px] font-mono text-dim mt-0.5">From reviewer feedback</p>
+              </div>
+              <div className="p-4">
+                {catData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                      <Pie data={catData} cx="50%" cy="50%" outerRadius={70} dataKey="value"
+                        label={({ name, percent }) => `${name} ${(percent*100).toFixed(0)}%`}
+                        labelLine={false}
+                        style={{ fontSize: 9, fontFamily: 'IBM Plex Mono' }}>
+                        {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Pie>
+                      <Tooltip content={<TT />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-44 flex flex-col items-center justify-center gap-2">
+                    <AlertTriangle className="w-5 h-5" style={{ color: '#2a3044' }} />
+                    <p className="text-[10px] font-mono text-dim">No corrections yet</p>
+                    <p className="text-[9px] font-mono text-muted">Submit feedback on classified results to see trends</p>
                   </div>
-                  <p className="text-sm text-slate-500">No corrections yet</p>
-                  <p className="text-xs text-slate-600 mt-1">Submit feedback on classification results to see trends</p>
-                </div>
-              )}
+                )}
+              </div>
             </motion.div>
           </div>
 
-          {/* Misclassified table */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-            className="glass-card overflow-hidden">
-            <div className="px-6 py-5 border-b border-white/5">
-              <h3 className="font-semibold text-white text-sm">Recent Corrections</h3>
-              <p className="text-xs text-slate-500 mt-1 font-mono">Cases where the LLM was corrected by a reviewer</p>
+          {/* Corrections table */}
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+            className="panel overflow-hidden">
+            <div className="px-4 py-3 border-b border-border">
+              <p className="text-[10px] font-mono uppercase tracking-widest text-ghost">Recent Corrections</p>
+              <p className="text-[9px] font-mono text-dim mt-0.5">Cases where the LLM was corrected by a reviewer</p>
             </div>
             {analytics?.recent_misclassifications?.length > 0 ? (
-              <table className="data-table">
+              <table className="dt">
                 <thead>
-                  <tr>
-                    <th>Complaint ID</th>
-                    <th>Input</th>
-                    <th>Corrected Category</th>
-                    <th>Corrected Urgency</th>
-                    <th>Note</th>
-                    <th>Date</th>
-                  </tr>
+                  <tr><th>Complaint ID</th><th>Input</th><th>Cat</th><th>Urgency</th><th>Note</th><th>Date</th></tr>
                 </thead>
                 <tbody>
                   {analytics.recent_misclassifications.map((r, i) => (
                     <tr key={i}>
-                      <td className="font-mono text-xs text-violet-400">{r.complaint_id}</td>
-                      <td className="max-w-[200px]">
-                        <p className="text-xs text-slate-400 line-clamp-1">{r.input_text || '—'}</p>
-                      </td>
-                      <td className="text-xs text-cyan-400 font-mono">{r.correct_cat || '—'}</td>
-                      <td className="text-xs font-mono text-amber-400">{r.correct_urg || '—'}</td>
-                      <td className="max-w-[160px]">
-                        <p className="text-xs text-slate-500 line-clamp-1">{r.reviewer_note || '—'}</p>
-                      </td>
-                      <td className="text-[10px] font-mono text-slate-600 whitespace-nowrap">
-                        {r.created_at?.slice(0, 10) || '—'}
-                      </td>
+                      <td className="text-violet text-[9px]">{r.complaint_id}</td>
+                      <td className="max-w-[180px]"><p className="text-[10px] text-dim line-clamp-1">{r.input_text || '—'}</p></td>
+                      <td style={{ color: '#d4f43c' }} className="text-[10px]">{r.correct_cat || '—'}</td>
+                      <td style={{ color: '#f5a623' }} className="text-[10px]">{r.correct_urg || '—'}</td>
+                      <td className="max-w-[140px]"><p className="text-[10px] text-dim line-clamp-1">{r.reviewer_note || '—'}</p></td>
+                      <td className="text-[9px] text-muted whitespace-nowrap">{r.created_at?.slice(0,10) || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             ) : (
-              <div className="py-12 flex flex-col items-center text-center">
-                <p className="text-sm text-slate-500">No corrections recorded yet.</p>
-                <p className="text-xs text-slate-600 mt-1">Use the thumbs-down button on any classification result to submit feedback.</p>
+              <div className="py-10 text-center">
+                <p className="text-[10px] font-mono text-dim">No corrections recorded. Use thumbs-down on results to submit feedback.</p>
               </div>
             )}
           </motion.div>
 
-          {/* System config card */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-            className="glass-card p-6">
-            <h3 className="font-semibold text-white text-sm mb-5">Retrieval Configuration</h3>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                { k: 'LLM Model', v: stats?.llm_model ?? '—' },
-                { k: 'Embed Model', v: stats?.embedding_model?.split(' ')[0] ?? '—' },
-                { k: 'Fusion', v: stats?.fusion_method ?? 'RRF' },
-                { k: 'Keyword Weight', v: stats?.keyword_weight != null ? `${Math.round(stats.keyword_weight * 100)}%` : '—' },
-                { k: 'Semantic Weight', v: stats?.semantic_weight != null ? `${Math.round(stats.semantic_weight * 100)}%` : '—' },
-                { k: 'Docs in Corpus', v: stats?.total_documents ?? '—' },
-                { k: 'Cache Hits', v: stats?.cache_hits ?? '—' },
-                { k: 'Index Status', v: stats?.index_status ?? '—' },
-              ].map(({ k, v }) => (
-                <div key={k} className="glass-subtle p-4 rounded-xl">
-                  <p className="text-[10px] font-mono text-slate-500 mb-2 uppercase tracking-widest">{k}</p>
-                  <p className="text-sm font-mono text-cyan-400">{v}</p>
+          {/* Config grid */}
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+            className="panel overflow-hidden">
+            <div className="px-4 py-3 border-b border-border">
+              <p className="text-[10px] font-mono uppercase tracking-widest text-ghost">Retrieval Configuration</p>
+            </div>
+            <div className="p-4 grid grid-cols-2 lg:grid-cols-4 gap-2">
+              {CONFIG_ROWS.map(({ k, v }) => (
+                <div key={k} className="panel px-3 py-2">
+                  <p className="text-[9px] font-mono text-dim mb-0.5 uppercase tracking-widest">{k}</p>
+                  <p className="text-[11px] font-mono" style={{ color: '#d4f43c' }}>{v}</p>
                 </div>
               ))}
             </div>

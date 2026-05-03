@@ -1,165 +1,138 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Layers, Plus, Trash2, Play, Download, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Play, Download, CheckCircle2, Zap, Globe2 } from 'lucide-react'
 import { UrgencyPill, SentimentBadge, SectionHeader, Spinner } from '../components/ui'
 import { classifyBatch } from '../api'
 
 const empty = () => ({ id: crypto.randomUUID(), text: '' })
 
 export default function BatchPage() {
-  const [inputs, setInputs] = useState([empty(), empty()])
+  const [inputs, setInputs]   = useState([empty(), empty()])
   const [results, setResults] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [error, setError]     = useState(null)
 
-  const addRow = () => setInputs(p => [...p, empty()])
-  const removeRow = (id) => setInputs(p => p.filter(r => r.id !== id))
-  const update = (id, text) => setInputs(p => p.map(r => r.id === id ? { ...r, text } : r))
+  const addRow    = () => setInputs(p => [...p, empty()])
+  const removeRow = id => setInputs(p => p.filter(r => r.id !== id))
+  const update    = (id, text) => setInputs(p => p.map(r => r.id === id ? { ...r, text } : r))
 
   const run = async () => {
-    const complaints = inputs.filter(r => r.text.trim().length >= 5)
-    if (!complaints.length) return
+    const valid = inputs.filter(r => r.text.trim().length >= 5)
+    if (!valid.length) return
     setLoading(true); setError(null); setResults(null)
-    try {
-      const res = await classifyBatch(complaints.map(c => ({ text: c.text })))
-      setResults(res)
-    } catch (e) { setError(e.message) }
+    try { setResults(await classifyBatch(valid.map(c => ({ text: c.text })))) }
+    catch (e) { setError(e.message) }
     setLoading(false)
   }
 
   const exportCSV = () => {
     if (!results) return
-    const rows = [['#', 'Input', 'Category', 'Subcategory', 'Urgency', 'Sentiment', 'Confidence', 'Team', 'ETA']]
+    const rows = [['#','Input','Category','Subcategory','Urgency','Sentiment','Confidence','Team','ETA(h)']]
     results.results.forEach((r, i) => {
       const c = r.classification
-      if (c) rows.push([i + 1, `"${r.input_text.replace(/"/g, '""')}"`, c.category, c.subcategory,
-        c.urgency, c.sentiment, c.confidence, c.assigned_team, c.estimated_resolution_hours])
+      if (c) rows.push([i+1, `"${(r.input_text||'').replace(/"/g,'""')}"`,
+        c.category, c.subcategory, c.urgency, c.sentiment,
+        c.confidence?.toFixed(2), c.assigned_team, c.estimated_resolution_hours])
     })
-    const csv = rows.map(r => r.join(',')).join('\n')
     const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
-    a.download = `batch-results-${Date.now()}.csv`
-    a.click()
+    a.href = URL.createObjectURL(new Blob([rows.map(r=>r.join(',')).join('\n')], { type: 'text/csv' }))
+    a.download = `batch-${Date.now()}.csv`; a.click()
   }
 
   const validCount = inputs.filter(r => r.text.trim().length >= 5).length
 
   return (
-    <div className="p-8 max-w-6xl">
-      <SectionHeader title="Batch Classification" sub="Process up to 50 complaints simultaneously">
-        <div className="flex gap-3">
+    <div className="px-6 py-6 max-w-5xl">
+      <SectionHeader title="Batch Classification" sub={`Up to 50 complaints — concurrent processing`}>
+        <div className="flex gap-2">
           {results && (
-            <button onClick={exportCSV} className="btn-secondary text-sm">
-              <Download className="w-4 h-4" /> Export CSV
+            <button onClick={exportCSV} className="btn text-[10px] py-1.5">
+              <Download className="w-3 h-3" /> Export CSV
             </button>
           )}
-          <button onClick={run} disabled={loading || validCount === 0} className="btn-primary">
-            {loading ? <><Spinner size="sm" /> Processing {validCount}…</> : <><Play className="w-4 h-4" /> Run {validCount} complaints</>}
+          <button onClick={run} disabled={loading || validCount === 0} className="btn btn-acid text-[10px] py-1.5">
+            {loading ? <><Spinner size="sm" /> Processing {validCount}…</> : <><Play className="w-3 h-3" /> Run {validCount}</>}
           </button>
         </div>
       </SectionHeader>
 
-      {/* Input area */}
-      <div className="glass-card mb-6 overflow-hidden">
-        <div className="divide-y divide-white/5">
+      {/* Input rows */}
+      <div className="panel overflow-hidden mb-4">
+        <div className="divide-y divide-border">
           <AnimatePresence>
             {inputs.map((row, i) => (
-              <motion.div
-                key={row.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-                className="flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] group"
-              >
-                <span className="w-6 flex items-center justify-center text-xs font-mono text-slate-600 shrink-0">{i + 1}</span>
+              <motion.div key={row.id}
+                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.15 }}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-edge transition-colors group overflow-hidden">
+                <span className="text-[10px] font-mono text-muted shrink-0 w-5">{String(i+1).padStart(2,'0')}</span>
                 <textarea
-                  value={row.text}
-                  onChange={e => update(row.id, e.target.value)}
-                  placeholder={`Complaint ${i + 1}…`}
-                  className="flex-1 bg-transparent resize-none text-sm text-slate-300 placeholder:text-slate-600 focus:outline-none leading-relaxed"
+                  value={row.text} onChange={e => update(row.id, e.target.value)}
+                  placeholder={`// complaint ${i+1}`}
+                  className="flex-1 bg-transparent text-[12px] font-mono text-ghost placeholder-muted focus:outline-none resize-none leading-relaxed h-8 focus:h-16 transition-all"
                 />
                 <button onClick={() => removeRow(row.id)} disabled={inputs.length === 1}
-                  className="opacity-40 group-hover:opacity-100 transition-opacity text-slate-600 hover:text-pink-400 shrink-0 disabled:opacity-20 disabled:hover:text-slate-600">
-                  <Trash2 className="w-4 h-4" />
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-dim hover:text-coral disabled:opacity-0 shrink-0">
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </motion.div>
             ))}
           </AnimatePresence>
         </div>
-
         <button onClick={addRow} disabled={inputs.length >= 50}
-          className="w-full py-3 text-sm text-slate-500 hover:text-slate-300 hover:bg-white/[0.02] transition-colors flex items-center justify-center gap-2 disabled:opacity-30 border-t border-white/5">
-          <Plus className="w-4 h-4" /> Add complaint {inputs.length < 50 ? `(${50 - inputs.length} remaining)` : '(max reached)'}
+          className="w-full py-2.5 text-[10px] font-mono text-dim hover:text-ghost hover:bg-edge transition-colors flex items-center justify-center gap-1.5 border-t border-border disabled:opacity-30">
+          <Plus className="w-3 h-3" /> Add row {inputs.length < 50 ? `(${50 - inputs.length} left)` : '(max)'}
         </button>
       </div>
 
       {error && (
-        <div className="glass-card p-4 mb-4" style={{ borderColor: 'rgba(236, 72, 153, 0.3)', background: 'rgba(236, 72, 153, 0.05)' }}>
-          <p className="text-sm text-pink-400 font-mono">{error}</p>
+        <div className="panel-coral panel px-4 py-3 mb-4">
+          <p className="text-[11px] font-mono" style={{ color: '#ff4d6a' }}>{error}</p>
         </div>
       )}
 
       {/* Results table */}
       <AnimatePresence>
         {results && (
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="glass-card overflow-hidden">
-            <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between">
-              <h3 className="font-semibold text-lg text-white flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center">
-                  <Layers className="w-4 h-4 text-white" />
-                </div>
-                Results
-              </h3>
-              <div className="flex gap-4 text-xs font-mono">
-                <span className="text-cyan-400">{results.successful} ok</span>
-                <span className="text-pink-400">{results.failed} failed</span>
-                <span className="text-slate-500">{results.processing_time_ms?.toFixed(0)}ms total</span>
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="panel overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <p className="text-[10px] font-mono uppercase tracking-widest text-ghost">Results</p>
+              <div className="flex gap-4 text-[10px] font-mono">
+                <span style={{ color: '#d4f43c' }}>{results.successful} ok</span>
+                <span style={{ color: '#ff4d6a' }}>{results.failed} failed</span>
+                <span className="text-dim">{Math.round(results.processing_time_ms)}ms</span>
               </div>
             </div>
             <div className="overflow-x-auto">
-              <table className="data-table">
+              <table className="dt">
                 <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Input</th>
-                    <th>Category</th>
-                    <th>Urgency</th>
-                    <th>Sentiment</th>
-                    <th>Confidence</th>
-                    <th>Team</th>
-                    <th>Status</th>
-                  </tr>
+                  <tr><th>#</th><th>Input</th><th>Category</th><th>Urgency</th><th>Sentiment</th><th>Conf</th><th>Team</th><th>Status</th></tr>
                 </thead>
                 <tbody>
                   {results.results.map((r, i) => (
                     <tr key={i}>
-                      <td className="font-mono text-slate-600 text-xs">{i + 1}</td>
-                      <td className="max-w-[200px]">
-                        <p className="truncate text-xs text-slate-400">{r.input_text}</p>
-                      </td>
+                      <td className="text-muted">{String(i+1).padStart(2,'0')}</td>
+                      <td className="max-w-[180px]"><p className="truncate text-[11px]">{r.input_text}</p></td>
                       {r.classification ? (
                         <>
                           <td>
-                            <div>
-                              <p className="text-sm text-white font-medium">{r.classification.category}</p>
-                              <p className="text-[10px] font-mono text-violet-400">{r.classification.subcategory}</p>
-                            </div>
+                            <p className="text-[11px] text-silver font-medium">{r.classification.category}</p>
+                            <p className="text-[9px] text-violet">{r.classification.subcategory}</p>
                           </td>
                           <td><UrgencyPill level={r.classification.urgency} /></td>
                           <td><SentimentBadge sentiment={r.classification.sentiment} /></td>
+                          <td style={{ color: '#d4f43c' }}>{Math.round(r.classification.confidence * 100)}%</td>
+                          <td className="text-[11px]">{r.classification.assigned_team}</td>
                           <td>
-                            <span className="font-mono text-xs text-cyan-400">
-                              {(r.classification.confidence * 100).toFixed(0)}%
-                            </span>
+                            <div className="flex items-center gap-1">
+                              {r.cached && <Zap className="w-3 h-3" style={{ color: '#f5a623' }} title="Cached" />}
+                              {r.classification?.metadata?.was_translated && <Globe2 className="w-3 h-3" style={{ color: '#2ee8d4' }} title="Translated" />}
+                              {!r.cached && !r.classification?.metadata?.was_translated && <CheckCircle2 className="w-3.5 h-3.5" style={{ color: '#d4f43c' }} />}
+                            </div>
                           </td>
-                          <td className="text-xs text-slate-400">{r.classification.assigned_team}</td>
-                          <td><CheckCircle2 className="w-4 h-4 text-cyan-400" /></td>
                         </>
                       ) : (
-                        <td colSpan={6} className="text-xs text-pink-400 font-mono">
-                          {r.error || 'Failed'}
-                        </td>
+                        <td colSpan={6} className="text-[10px]" style={{ color: '#ff4d6a' }}>{r.error || 'failed'}</td>
                       )}
                     </tr>
                   ))}
