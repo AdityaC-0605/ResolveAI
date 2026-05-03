@@ -2,168 +2,267 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  Zap, Layers, BarChart3, BookOpen,
-  Activity, Database, Cpu, Server, TrendingUp, ArrowRight,
+  Zap, Layers, BookOpen, BarChart3, Database, Activity,
+  Cpu, Server, ArrowRight, BrainCircuit, Clock, RefreshCw, Trash2,
 } from 'lucide-react'
-import { StatCard } from '../components/ui'
-import { getStats, getHealth } from '../api'
+import { StatBox, Tag, Spinner } from '../components/ui'
+import { getStats, getHealth, getCacheInfo, getFewShotExamples, refreshFewShot, clearCache } from '../api'
 
 const ACTIONS = [
-  { to: '/classify', icon: Zap, label: 'Classify', sub: 'Single complaint analysis', accent: 'from-cyan-500/20 to-cyan-600/10', border: 'border-cyan-500/20', iconBg: 'bg-cyan-500/20 text-cyan-400' },
-  { to: '/batch', icon: Layers, label: 'Batch Mode', sub: 'Process up to 50 at once', accent: 'from-violet-500/20 to-violet-600/10', border: 'border-violet-500/20', iconBg: 'bg-violet-500/20 text-violet-400' },
-  { to: '/knowledge', icon: BookOpen, label: 'Knowledge Base', sub: 'Manage complaint corpus', accent: 'from-amber-500/20 to-amber-600/10', border: 'border-amber-500/20', iconBg: 'bg-amber-500/20 text-amber-400' },
-  { to: '/analytics', icon: BarChart3, label: 'Analytics', sub: 'Accuracy & trends', accent: 'from-pink-500/20 to-pink-600/10', border: 'border-pink-500/20', iconBg: 'bg-pink-500/20 text-pink-400' },
+  { to: '/classify',  icon: Zap,      label: 'Classify',       sub: 'Single complaint',       accent: '#d4f43c' },
+  { to: '/batch',     icon: Layers,   label: 'Batch',          sub: 'Up to 50 at once',       accent: '#9b6fff' },
+  { to: '/knowledge', icon: BookOpen, label: 'Knowledge',      sub: 'Manage corpus',          accent: '#f5a623' },
+  { to: '/analytics', icon: BarChart3,label: 'Analytics',      sub: 'Accuracy & latency',     accent: '#2ee8d4' },
 ]
 
-export default function DashboardPage() {
-  const [stats, setStats] = useState(null)
-  const [health, setHealth] = useState(null)
+const PIPE = [
+  { label: 'Query',      color: '#4a566e' },
+  { label: '→',          arrow: true },
+  { label: 'BM25',       color: '#9b6fff' },
+  { label: '+',          arrow: true },
+  { label: 'Dense',      color: '#2ee8d4' },
+  { label: '→',          arrow: true },
+  { label: 'RRF',        color: '#f5a623' },
+  { label: '→',          arrow: true },
+  { label: 'Re-rank',    color: '#ff4d6a' },
+  { label: '→',          arrow: true },
+  { label: 'HyDE',       color: '#9b6fff' },
+  { label: '→',          arrow: true },
+  { label: 'LLM',        color: '#d4f43c' },
+  { label: '→',          arrow: true },
+  { label: 'JSON',       color: '#4a566e' },
+]
 
-  useEffect(() => {
-    getStats().then(setStats).catch(() => {})
-    getHealth().then(setHealth).catch(() => {})
-  }, [])
+function Row({ label, value, accent = '#8494a8' }) {
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-border last:border-0">
+      <p className="text-[10px] font-mono text-dim uppercase tracking-widest">{label}</p>
+      <p className="text-[11px] font-mono font-medium" style={{ color: accent }}>{value}</p>
+    </div>
+  )
+}
+
+export default function DashboardPage() {
+  const [stats, setStats]         = useState(null)
+  const [health, setHealth]       = useState(null)
+  const [cache, setCache]         = useState(null)
+  const [fewShot, setFewShot]     = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const [clearing, setClearing]   = useState(false)
+
+  const load = async () => {
+    await Promise.allSettled([
+      getStats().then(setStats).catch(() => {}),
+      getHealth().then(setHealth).catch(() => {}),
+      getCacheInfo().then(setCache).catch(() => {}),
+      getFewShotExamples().then(setFewShot).catch(() => {}),
+    ])
+  }
+
+  useEffect(() => { load() }, [])
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try { await refreshFewShot(); await getFewShotExamples().then(setFewShot) } catch {}
+    setRefreshing(false)
+  }
+
+  const handleClear = async () => {
+    setClearing(true)
+    try { await clearCache(); await getCacheInfo().then(setCache) } catch {}
+    setClearing(false)
+  }
 
   return (
-    <div className="min-h-full p-8">
+    <div className="px-6 py-6 max-w-6xl">
+
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="mb-10"
-      >
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-subtle mb-4">
-          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">Hybrid RAG v2.0</span>
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex items-end justify-between border-b border-border pb-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-acid animate-pulse" />
+            <p className="text-[9px] font-mono uppercase tracking-widest text-dim">System dashboard</p>
+          </div>
+          <h1 className="text-xl font-mono font-semibold text-silver">ResolveAI</h1>
         </div>
-        <h1 className="text-4xl font-bold text-white mb-3">
-          Dashboard
-        </h1>
-        <p className="text-slate-400 text-lg max-w-xl">
-          Monitor system health, track classification metrics, and manage your AI pipeline.
-        </p>
+        <button onClick={load} className="btn text-[10px] py-1.5">
+          <RefreshCw className="w-3 h-3" /> Refresh
+        </button>
       </motion.div>
 
-      <div className="space-y-8">
+      {/* KPI row */}
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+        className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-6">
+        <StatBox label="Documents"       value={stats?.total_documents ?? '—'} accent="#d4f43c" />
+        <StatBox label="Classified"      value={stats?.total_classifications ?? '—'} accent="#9b6fff" />
+        <StatBox label="Avg Latency"     value={stats ? `${stats.avg_processing_ms}ms` : '—'} accent="#f5a623" />
+        <StatBox label="Cache Hit Rate"  value={stats ? `${Math.round(stats.cache_hits / (stats.cache_hits + stats.cache_misses || 1) * 100)}%` : '—'} accent="#2ee8d4" />
+      </motion.div>
 
-        {/* Stats Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
-        >
-          <StatCard label="Total Documents" value={stats?.total_documents ?? '—'} icon={Database} color="text-cyan-400" />
-          <StatCard label="Classifications" value={stats?.total_classifications ?? '—'} icon={Activity} color="text-violet-400" />
-          <StatCard label="Avg Latency" value={stats ? `${stats.avg_processing_ms}ms` : '—'} icon={Zap} color="text-amber-400" />
-          <StatCard label="Cache Hit Rate" value={stats ? `${Math.round((stats.cache_hits / (stats.cache_hits + stats.cache_misses || 1)) * 100)}%` : '—'} icon={TrendingUp} color="text-mint" />
-        </motion.div>
+      {/* Quick actions */}
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mb-6">
+        <p className="label mb-3">Quick actions</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          {ACTIONS.map(({ to, icon: Icon, label, sub, accent }) => (
+            <Link key={to} to={to}>
+              <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}
+                className="panel p-4 cursor-pointer transition-colors hover:border-muted group"
+                style={{ borderLeftWidth: 2, borderLeftColor: accent + '40' }}
+                onMouseEnter={e => e.currentTarget.style.borderLeftColor = accent}
+                onMouseLeave={e => e.currentTarget.style.borderLeftColor = accent + '40'}>
+                <Icon className="w-4 h-4 mb-3" style={{ color: accent }} />
+                <p className="text-[12px] font-mono font-semibold text-silver">{label}</p>
+                <p className="text-[10px] font-mono text-dim mt-0.5">{sub}</p>
+                <ArrowRight className="w-3 h-3 text-muted mt-3 group-hover:text-ghost transition-colors" />
+              </motion.div>
+            </Link>
+          ))}
+        </div>
+      </motion.div>
 
-        {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          <h2 className="text-xl font-semibold text-white mb-5">Quick Actions</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {ACTIONS.map(({ to, icon: Icon, label, sub, accent, border, iconBg }) => (
-              <Link key={to} to={to}>
-                <motion.div
-                  whileHover={{ y: -4, scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  className={`glass-card p-5 h-full cursor-pointer bg-gradient-to-br ${accent} border ${border}`}
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${iconBg}`}>
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <p className="font-semibold text-white text-lg mb-1">{label}</p>
-                  <p className="text-sm text-slate-400">{sub}</p>
-                  <ArrowRight className="w-4 h-4 text-slate-500 mt-4" />
-                </motion.div>
-              </Link>
-            ))}
+      <div className="grid lg:grid-cols-3 gap-4 mb-4">
+
+        {/* System status */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+          className="panel overflow-hidden">
+          <div className="px-4 py-3 border-b border-border">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-ghost">System status</p>
           </div>
-        </motion.div>
-
-        {/* System Status */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-        >
-          <h2 className="text-xl font-semibold text-white mb-5">System Status</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="divide-y divide-border">
             {[
-              { label: 'Ollama LLM', ok: health?.ollama_reachable, icon: Cpu, detail: stats?.llm_model ?? '—', color: 'cyan' },
-              { label: 'BM25 Index', ok: health?.bm25_index_ready, icon: Activity, detail: `${stats?.total_documents ?? 0} docs indexed`, color: 'violet' },
-              { label: 'Vector DB', ok: health?.vector_db_count > 0, icon: Server, detail: `ChromaDB · ${health?.vector_db_count ?? 0} vectors`, color: 'pink' },
-            ].map(({ label, ok, icon: Icon, detail, color }) => (
-              <div key={label} className="glass-card p-5 flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0
-                  ${ok ? `bg-${color}-500/10 border border-${color}-500/20` : 'bg-pink-500/10 border border-pink-500/20'}`}>
-                  <Icon className={`w-5 h-5 ${ok ? `text-${color}-400` : 'text-pink-400'}`} />
+              { label: 'Ollama LLM',  ok: health?.ollama_reachable,    icon: Cpu,      detail: stats?.llm_model ?? '—' },
+              { label: 'BM25 Index',  ok: health?.bm25_index_ready,    icon: Activity, detail: `${stats?.total_documents ?? 0} docs` },
+              { label: 'Vector DB',   ok: (health?.vector_db_count ?? 0) > 0, icon: Server,   detail: `${health?.vector_db_count ?? 0} vectors` },
+            ].map(({ label, ok, icon: Icon, detail }) => (
+              <div key={label} className="flex items-center gap-3 px-4 py-3">
+                <div className="relative w-1.5 h-1.5 shrink-0">
+                  <div className="absolute inset-0 rounded-full" style={{ background: ok ? '#d4f43c' : '#ff4d6a' }} />
+                  {ok && <div className="absolute inset-0 rounded-full animate-ping opacity-50" style={{ background: '#d4f43c' }} />}
                 </div>
+                <Icon className="w-3.5 h-3.5 shrink-0 text-dim" />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-white text-sm">{label}</p>
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${ok ? 'bg-cyan-500/10 text-cyan-400' : 'bg-pink-500/10 text-pink-400'}`}>
-                      {ok ? 'OK' : 'ERR'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 font-mono mt-1 truncate">{detail}</p>
+                  <p className="text-[11px] font-mono text-silver">{label}</p>
+                  <p className="text-[9px] font-mono text-dim truncate">{detail}</p>
                 </div>
+                <span className="text-[9px] font-mono" style={{ color: ok ? '#d4f43c' : '#ff4d6a' }}>{ok ? 'OK' : 'ERR'}</span>
               </div>
             ))}
           </div>
         </motion.div>
 
-        {/* Pipeline Architecture */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-        >
-          <h2 className="text-xl font-semibold text-white mb-5">Pipeline Architecture</h2>
-          <div className="glass-card p-6">
-            <div className="flex items-center gap-2 flex-wrap justify-center">
-              {[
-                { label: 'Query', color: 'bg-slate-700/50 text-slate-300' },
-                { label: '→', color: 'text-slate-600 text-xl', arrow: true },
-                { label: 'BM25', color: 'bg-violet-500/15 text-violet-400 border border-violet-500/20' },
-                { label: '+', color: 'text-slate-600 text-xl', arrow: true },
-                { label: 'Dense', color: 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/20' },
-                { label: '→', color: 'text-slate-600 text-xl', arrow: true },
-                { label: 'RRF', color: 'bg-amber-500/15 text-amber-400 border border-amber-500/20' },
-                { label: '→', color: 'text-slate-600 text-xl', arrow: true },
-                { label: 'Re-rank', color: 'bg-pink-500/15 text-pink-400 border border-pink-500/20' },
-                { label: '→', color: 'text-slate-600 text-xl', arrow: true },
-                { label: 'LLM', color: 'bg-mint/10 text-mint border border-mint/20' },
-                { label: '→', color: 'text-slate-600 text-xl', arrow: true },
-                { label: 'JSON', color: 'bg-slate-700/50 text-slate-300' },
-              ].map(({ label, color, arrow }, i) => (
-                <span key={i} className={`${arrow ? color : `px-3 py-1.5 rounded-lg text-xs font-mono ${color}`}`}>
-                  {label}
-                </span>
-              ))}
-            </div>
-            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-              {[
-                { k: 'Keyword Weight', v: stats?.keyword_weight ? `${stats.keyword_weight * 100}%` : '35%' },
-                { k: 'Semantic Weight', v: stats?.semantic_weight ? `${stats.semantic_weight * 100}%` : '65%' },
-                { k: 'Fusion Method', v: 'RRF k=60' },
-                { k: 'Embed Model', v: stats?.embedding_model?.split(' ')[0] ?? 'nomic-embed' },
-              ].map(({ k, v }) => (
-                <div key={k} className="glass-subtle p-3 rounded-lg">
-                  <p className="text-xs text-slate-500 mb-1">{k}</p>
-                  <p className="text-sm font-mono text-cyan-400">{v}</p>
+        {/* Cache info */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+          className="panel overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-ghost">Cache layer</p>
+            <button onClick={handleClear} disabled={clearing} className="btn btn-danger py-1 px-2.5 text-[9px]">
+              {clearing ? <Spinner size="sm" /> : <><Trash2 className="w-2.5 h-2.5" /> Clear</>}
+            </button>
+          </div>
+          <div className="p-4 space-y-3">
+            {cache ? (
+              <>
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <p className="label">Query Cache</p>
+                    <p className="text-[10px] font-mono" style={{ color: '#d4f43c' }}>{Math.round((cache.query?.hit_rate ?? 0) * 100)}% hit</p>
+                  </div>
+                  <div className="h-px bg-border overflow-hidden">
+                    <div className="h-full bg-acid" style={{ width: `${Math.round((cache.query?.hit_rate ?? 0) * 100)}%`, transition: 'width 1s' }} />
+                  </div>
+                  <p className="text-[9px] font-mono text-dim mt-0.5">{cache.query?.size ?? 0} items · {cache.query?.hits ?? 0} hits</p>
                 </div>
-              ))}
-            </div>
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <p className="label">Embed Cache</p>
+                    <p className="text-[10px] font-mono" style={{ color: '#9b6fff' }}>{Math.round((cache.embed?.hit_rate ?? 0) * 100)}% hit</p>
+                  </div>
+                  <div className="h-px bg-border overflow-hidden">
+                    <div className="h-full" style={{ width: `${Math.round((cache.embed?.hit_rate ?? 0) * 100)}%`, background: '#9b6fff', transition: 'width 1s' }} />
+                  </div>
+                  <p className="text-[9px] font-mono text-dim mt-0.5">{cache.embed?.size ?? 0} items · {cache.embed?.hits ?? 0} hits</p>
+                </div>
+                <Row label="Backend" value={cache.query?.backend ?? 'in-process'} accent="#2ee8d4" />
+              </>
+            ) : (
+              <div className="flex items-center justify-center py-6"><Spinner /></div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Few-shot */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+          className="panel overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-ghost">Few-shot prompts</p>
+            <button onClick={handleRefresh} disabled={refreshing || !fewShot?.enabled} className="btn btn-outline-cyan py-1 px-2.5 text-[9px] disabled:opacity-30">
+              {refreshing ? <Spinner size="sm" /> : <><RefreshCw className="w-2.5 h-2.5" /> Refresh</>}
+            </button>
+          </div>
+          <div className="p-4">
+            {fewShot ? (
+              fewShot.enabled ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="label">Active examples</p>
+                    <Tag color="#d4f43c">{fewShot.count}</Tag>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3 h-3 text-dim" />
+                    <p className="text-[10px] font-mono text-dim">
+                      Last: {fewShot.last_refresh ? new Date(fewShot.last_refresh).toLocaleTimeString() : 'Never'}
+                    </p>
+                  </div>
+                  {fewShot.examples?.length > 0 && (
+                    <div className="space-y-1 mt-2">
+                      {fewShot.examples.slice(0, 3).map((ex, i) => (
+                        <div key={i} className="px-2 py-1.5 border border-border text-[9px] font-mono text-dim line-clamp-1">
+                          {ex.slice(0, 80)}…
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-[10px] font-mono text-dim py-4 text-center">Disabled in settings</p>
+              )
+            ) : (
+              <div className="flex items-center justify-center py-6"><Spinner /></div>
+            )}
           </div>
         </motion.div>
       </div>
+
+      {/* Pipeline architecture */}
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+        className="panel overflow-hidden">
+        <div className="px-4 py-3 border-b border-border">
+          <p className="text-[10px] font-mono uppercase tracking-widest text-ghost">Pipeline architecture</p>
+        </div>
+        <div className="p-4">
+          <div className="flex items-center gap-1 flex-wrap">
+            {PIPE.map(({ label, color, arrow }, i) => (
+              arrow
+                ? <span key={i} className="text-[10px] font-mono text-muted">{label}</span>
+                : <span key={i} className="text-[10px] font-mono px-2.5 py-1 border"
+                    style={{ color, borderColor: color + '30', background: color + '08' }}>{label}</span>
+            ))}
+          </div>
+          <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-2">
+            {[
+              { k: 'Keyword Weight', v: stats?.keyword_weight ? `${Math.round(stats.keyword_weight*100)}%` : '35%' },
+              { k: 'Semantic Weight', v: stats?.semantic_weight ? `${Math.round(stats.semantic_weight*100)}%` : '65%' },
+              { k: 'Fusion',         v: 'RRF k=60' },
+              { k: 'Embed Model',    v: stats?.embedding_model?.split(' ')[0] ?? 'nomic-embed' },
+            ].map(({ k, v }) => (
+              <div key={k} className="panel px-3 py-2">
+                <p className="label mb-0.5">{k}</p>
+                <p className="text-[11px] font-mono" style={{ color: '#d4f43c' }}>{v}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
     </div>
   )
 }
