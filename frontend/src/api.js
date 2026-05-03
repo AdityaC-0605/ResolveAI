@@ -1,80 +1,23 @@
-/**
- * api.js — Centralized API client for the Hybrid RAG backend.
- * All endpoints from main.py are represented here.
- */
-
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-async function request(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
-    ...options,
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }))
-    throw new Error(err.detail || 'API Error')
-  }
-  return res.json()
+async function req(path, opts = {}) {
+  const r = await fetch(`${BASE}${path}`, { headers: { 'Content-Type': 'application/json', ...opts.headers }, ...opts })
+  if (!r.ok) { const e = await r.json().catch(() => ({ detail: r.statusText })); throw new Error(e.detail || 'API Error') }
+  return r.json()
 }
 
-// ── Classification ──────────────────────────────────────────────────────────
-
-export const classifyComplaint = (text, customerId, source) =>
-  request('/classify', {
-    method: 'POST',
-    body: JSON.stringify({ text, customer_id: customerId, source }),
-  })
-
-export const classifyBatch = (complaints) =>
-  request('/classify/batch', {
-    method: 'POST',
-    body: JSON.stringify({ complaints }),
-  })
-
-/**
- * Returns an EventSource for the streaming endpoint.
- * Caller is responsible for closing it.
- */
-export const classifyStream = (text) => {
-  // SSE requires GET or POST via EventSource. We use fetch for POST-SSE.
-  return fetch(`${BASE}/classify/stream`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
-  })
-}
-
-// ── Documents ───────────────────────────────────────────────────────────────
-
-export const listDocuments = (limit = 50, offset = 0) =>
-  request(`/documents?limit=${limit}&offset=${offset}`)
-
-export const upsertDocument = (id, text, metadata = {}) =>
-  request('/documents', {
-    method: 'POST',
-    body: JSON.stringify({ id, text, metadata }),
-  })
-
-export const deleteDocument = (docId) =>
-  request(`/documents/${docId}`, { method: 'DELETE' })
-
-// ── Feedback ────────────────────────────────────────────────────────────────
-
-export const submitFeedback = (complaintId, isCorrect, correctCategory, correctUrgency, note) =>
-  request('/feedback', {
-    method: 'POST',
-    body: JSON.stringify({
-      complaint_id: complaintId,
-      is_correct: isCorrect,
-      correct_category: correctCategory,
-      correct_urgency: correctUrgency,
-      reviewer_note: note,
-    }),
-  })
-
-// ── System ──────────────────────────────────────────────────────────────────
-
-export const getHealth  = ()           => request('/health')
-export const getStats   = ()           => request('/stats')
-export const getAnalytics = (limit=500) => request(`/analytics?limit=${limit}`)
-export const clearCache = ()           => request('/cache', { method: 'DELETE' })
+export const classifyComplaint  = (text, customer_id, source) => req('/classify', { method: 'POST', body: JSON.stringify({ text, customer_id, source }) })
+export const classifyBatch      = (complaints) => req('/classify/batch', { method: 'POST', body: JSON.stringify({ complaints }) })
+export const classifyStream     = (text) => fetch(`${BASE}/classify/stream`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) })
+export const listDocuments      = (limit = 50, offset = 0) => req(`/documents?limit=${limit}&offset=${offset}`)
+export const upsertDocument     = (id, text, metadata = {}) => req('/documents', { method: 'POST', body: JSON.stringify({ id, text, metadata }) })
+export const deleteDocument     = (id) => req(`/documents/${id}`, { method: 'DELETE' })
+export const submitFeedback     = (complaint_id, is_correct, correct_category, correct_urgency, reviewer_note) =>
+  req('/feedback', { method: 'POST', body: JSON.stringify({ complaint_id, is_correct, correct_category, correct_urgency, reviewer_note }) })
+export const getHealth          = () => req('/health')
+export const getStats           = () => req('/stats')
+export const getAnalytics       = (limit = 500) => req(`/analytics?limit=${limit}`)
+export const getCacheInfo       = () => req('/cache/info')
+export const clearCache         = () => req('/cache', { method: 'DELETE' })
+export const getFewShotExamples = () => req('/admin/few-shot-examples')
+export const refreshFewShot     = () => req('/admin/refresh-prompts', { method: 'POST' })
