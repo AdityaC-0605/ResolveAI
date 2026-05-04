@@ -14,7 +14,7 @@ export default function Layout() {
   }, [])
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden" style={{ background: '#07080d' }}>
+    <div className="flex h-screen w-screen overflow-hidden" style={{ background: '#0A0A0B' }}>
       {/* Subtle grid background */}
       <div className="fixed inset-0 pointer-events-none z-0 grid-bg opacity-60" />
 
