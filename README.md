@@ -40,7 +40,8 @@ npm run dev
 
 - **Backend**: FastAPI, Pydantic v2, ChromaDB (Vector Store), Rank-BM25.
 - **AI/LLM**: Ollama (llama3.2/mistral), nomic-embed-text.
-- **Frontend**: React 18, Tailwind CSS, Framer Motion (Animations), Vite.
+- **Frontend**: React 18, Tailwind CSS, Framer Motion (Physics-based animations), Vite.
+- **Design System**: Custom "Carbon & Quartz" aesthetic (Inter & JetBrains Mono, Studio-grade UI).
 - **Infrastructure & Monitoring**: Redis (Distributed Caching), Prometheus (Telemetry), LangDetect (Multilingual).
 - **Data Store**: SQLite (Feedback & System Configurations).
 
@@ -88,20 +89,36 @@ Every classification includes:
 │   ├── MIGRATION.md         # V2 enhancement configuration guide
 │   └── requirements.txt     # Python dependencies
 └── frontend/
-    ├── index.html           # HTML entry point
+    ├── index.html           # HTML entry point (Fonts configuration)
     ├── package.json         # NPM dependencies
     ├── vite.config.js       # Vite build configuration
-    ├── tailwind.config.js   # Tailwind CSS design system config
+    ├── tailwind.config.js   # Tailwind CSS design system config (Carbon & Quartz tokens)
     ├── postcss.config.js    # PostCSS config
     ├── .eslintrc.json       # ESLint rules
     └── src/
         ├── main.jsx         # React application entry
         ├── App.jsx          # React router & route definitions
         ├── api.js           # Centralised fetch API calls
-        ├── index.css        # Global styles & glassmorphism utilities
-        ├── pages/           # Landing, Dashboard, Classify, Batch, Knowledge, Analytics
-        ├── components/      # UI components, ParticleField, Layout, Sidebar
-        └── hooks/           # useComplaintPipeline custom streaming hook
+        ├── index.css        # Global styles, typography & UI utilities
+        ├── pages/
+        │   ├── LandingPage.jsx      # Marketing/Hero entry page
+        │   ├── DashboardPage.jsx    # Overview metrics & performance
+        │   ├── ClassifyPage.jsx     # Main pipeline interface
+        │   ├── BatchPage.jsx        # Bulk processing & table views
+        │   ├── KnowledgePage.jsx    # RAG knowledge base management
+        │   └── AnalyticsPage.jsx    # System analytics & data visualization
+        ├── components/
+        │   ├── ComplaintInput.jsx   # Input handling & example management
+        │   ├── Layout.jsx           # Master layout & routing wrapper
+        │   ├── NeuralBackground.jsx # Animated background elements
+        │   ├── ParticleField.jsx    # Interactive depth particle system
+        │   ├── RetrievalPipeline.jsx# Pipeline stage visualization
+        │   ├── Sidebar.jsx          # Navigation & app routing
+        │   ├── StructuredOutput.jsx # Classification results viewer
+        │   ├── TopKContext.jsx      # Retrieved chunks context display
+        │   └── ui/                  # Reusable low-level UI components
+        └── hooks/
+            └── useComplaintPipeline.js # Custom state & stream management
 ```
 
 ---
