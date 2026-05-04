@@ -19,28 +19,28 @@ export default function ComplaintInput({ onSubmit, loading }) {
   const submit = e => { e?.preventDefault(); if (text.trim().length >= 5 && !loading) onSubmit(text.trim()) }
 
   return (
-    <div className="panel-accent panel">
+    <div className="panel" style={{ borderColor: 'rgba(79,70,229,0.3)', background: 'rgba(79,70,229,0.05)' }}>
       {/* Header bar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-acid" />
-          <span className="text-[10px] font-mono uppercase tracking-widest text-ghost">Input</span>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[#1E1E20]">
+        <div className="flex items-center gap-2.5">
+          <div className="w-2 h-2 rounded-full bg-[#818CF8]" />
+          <span className="text-[11px] font-medium uppercase tracking-wider text-flint">Input</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-mono text-dim">{text.length}/5000</span>
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] text-slate font-mono">{text.length}/5000</span>
           <div className="relative">
             <button onClick={() => setShowEx(s => !s)}
-              className="btn text-[9px] flex items-center gap-1 py-1 px-2">
-              Examples <ChevronDown className={`w-3 h-3 transition-transform ${showEx ? 'rotate-180' : ''}`} />
+              className="btn text-[11px] flex items-center gap-1.5 py-1.5 px-2.5">
+              Examples <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showEx ? 'rotate-180' : ''}`} />
             </button>
             {showEx && (
-              <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                className="absolute right-0 top-full mt-1 w-64 z-50 border border-border"
-                style={{ background: '#0a0c14' }}>
+              <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                className="absolute right-0 top-full mt-2 w-72 z-50 border border-[#1E1E20] rounded-lg shadow-xl"
+                style={{ background: '#0A0A0B' }}>
                 {EXAMPLES.map((ex, i) => (
                   <button key={i} onClick={() => { setText(ex.text); setShowEx(false); setTimeout(() => ref.current?.focus(), 50) }}
-                    className="w-full text-left px-3 py-2.5 text-[11px] font-mono text-ghost hover:text-silver hover:bg-edge border-b border-border last:border-0 transition-colors">
-                    <span className="text-acid">[{String(i+1).padStart(2,'0')}]</span> {ex.label}
+                    className="w-full text-left px-4 py-3 text-[12px] font-medium text-slate hover:text-quartz hover:bg-[#121214] border-b border-[#1E1E20] last:border-0 transition-colors">
+                    <span className="text-[#818CF8] font-mono mr-2">[{String(i+1).padStart(2,'0')}]</span> {ex.label}
                   </button>
                 ))}
               </motion.div>
@@ -50,23 +50,23 @@ export default function ComplaintInput({ onSubmit, loading }) {
       </div>
 
       {/* Textarea */}
-      <form onSubmit={submit} className="p-4 space-y-3">
+      <form onSubmit={submit} className="p-5 space-y-4">
         <textarea ref={ref} value={text} onChange={e => setText(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit() }}
           placeholder="// paste or type customer complaint..."
-          className="input h-40 w-full text-[13px] leading-relaxed" />
+          className="input h-48 w-full text-[14px] font-medium text-quartz leading-relaxed resize-none" />
 
         <div className="flex items-center justify-between">
           <button type="button" onClick={() => setText('')} disabled={!text}
-            className="btn py-1.5 px-3 text-[10px] disabled:opacity-20">
-            <RotateCcw className="w-3 h-3" /> Clear
+            className="btn py-2 px-4 text-xs disabled:opacity-30">
+            <RotateCcw className="w-3.5 h-3.5" /> Clear
           </button>
-          <span className="text-[9px] font-mono text-dim">⌘+Enter</span>
+          <span className="text-[11px] font-mono text-slate">⌘+Enter</span>
           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            disabled={loading || text.length < 5} className="btn btn-acid py-1.5 px-4 text-[10px]">
+            disabled={loading || text.length < 5} className="btn btn-acid py-2 px-5 text-xs font-medium">
             {loading
               ? <><Spinner size="sm" /> Analysing...</>
-              : <><Send className="w-3 h-3" /> Classify</>}
+              : <><Send className="w-3.5 h-3.5" /> Classify</>}
           </motion.button>
         </div>
       </form>
