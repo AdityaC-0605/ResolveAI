@@ -8,13 +8,13 @@ import { RefreshCw, Trash2, Target, BarChart3, TrendingUp, AlertTriangle } from 
 import { StatBox, SectionHeader, Spinner, Tag } from '../components/ui'
 import { getAnalytics, getStats, clearCache } from '../api'
 
-const COLORS = ['#d4f43c','#2ee8d4','#9b6fff','#f5a623','#ff4d6a','#60a5fa','#34d399']
+const COLORS = ['#059669','#3B82F6','#818CF8','#D97706','#E11D48','#60A5FA','#34D399']
 
 const TT = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="panel px-2.5 py-2 text-[10px] font-mono" style={{ borderColor: 'rgba(212,244,60,0.2)' }}>
-      <p className="text-dim mb-1">{label}</p>
+    <div className="panel px-3 py-2 text-[11px] font-medium" style={{ borderColor: '#1E1E20', background: '#0A0A0B' }}>
+      <p className="text-slate mb-1">{label}</p>
       {payload.map((p, i) => <p key={i} style={{ color: p.color }}>{p.name}: {typeof p.value === 'number' ? p.value.toFixed(1) : p.value}</p>)}
     </div>
   )
@@ -72,14 +72,14 @@ export default function AnalyticsPage() {
   ]
 
   return (
-    <div className="px-6 py-6 max-w-6xl">
+    <div className="px-8 py-8 max-w-6xl mx-auto">
       <SectionHeader title="Analytics" sub="Accuracy · latency · correction trends">
-        <div className="flex gap-2">
-          <button onClick={handleClear} disabled={clearing} className="btn btn-danger text-[10px] py-1.5">
-            {clearing ? <Spinner size="sm" /> : <><Trash2 className="w-3 h-3" /> Clear Cache</>}
+        <div className="flex gap-3">
+          <button onClick={handleClear} disabled={clearing} className="btn btn-danger text-sm py-2">
+            {clearing ? <Spinner size="sm" /> : <><Trash2 className="w-4 h-4" /> Clear Cache</>}
           </button>
-          <button onClick={load} disabled={loading} className="btn text-[10px] py-1.5">
-            {loading ? <Spinner size="sm" /> : <><RefreshCw className="w-3 h-3" /> Refresh</>}
+          <button onClick={load} disabled={loading} className="btn text-sm py-2">
+            {loading ? <Spinner size="sm" /> : <><RefreshCw className="w-4 h-4" /> Refresh</>}
           </button>
         </div>
       </SectionHeader>
@@ -87,64 +87,64 @@ export default function AnalyticsPage() {
       {loading && !stats ? (
         <div className="flex justify-center py-24"><Spinner /></div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* KPIs */}
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-            <StatBox label="Accuracy"        value={acc?.accuracy != null ? `${(acc.accuracy*100).toFixed(1)}%` : '—'} accent="#d4f43c"
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatBox label="Accuracy"        value={acc?.accuracy != null ? `${(acc.accuracy*100).toFixed(1)}%` : '—'} accent="#059669"
               sub={acc ? `${acc.correct}/${acc.total} correct` : 'No feedback yet'} />
-            <StatBox label="Classified"      value={stats?.total_classifications ?? '—'} accent="#9b6fff" />
-            <StatBox label="Avg Latency"     value={stats ? `${stats.avg_processing_ms}ms` : '—'} accent="#f5a623" />
-            <StatBox label="Cache Efficiency" value={stats ? `${Math.round(stats.cache_hits / ((stats.cache_hits + stats.cache_misses) || 1) * 100)}%` : '—'} accent="#2ee8d4"
+            <StatBox label="Classified"      value={stats?.total_classifications ?? '—'} accent="#818CF8" />
+            <StatBox label="Avg Latency"     value={stats ? `${stats.avg_processing_ms}ms` : '—'} accent="#D97706" />
+            <StatBox label="Cache Efficiency" value={stats ? `${Math.round(stats.cache_hits / ((stats.cache_hits + stats.cache_misses) || 1) * 100)}%` : '—'} accent="#3B82F6"
               sub={stats ? `${stats.cache_hits} hits · ${stats.cache_misses} misses` : ''} />
           </motion.div>
 
-          <div className="grid lg:grid-cols-2 gap-4">
+          <div className="grid lg:grid-cols-2 gap-6">
             {/* Latency chart */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, type: 'spring', stiffness: 400, damping: 30 }}
               className="panel overflow-hidden">
-              <div className="px-4 py-3 border-b border-border">
-                <p className="text-[10px] font-mono uppercase tracking-widest text-ghost">Latency Profile</p>
-                <p className="text-[9px] font-mono text-dim mt-0.5">Estimated based on avg ± variance</p>
+              <div className="px-5 py-4 border-b border-[#1E1E20]">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-flint">Latency Profile</p>
+                <p className="text-[10px] text-slate mt-1">Estimated based on avg ± variance</p>
               </div>
-              <div className="p-4">
-                <ResponsiveContainer width="100%" height={180}>
+              <div className="p-5">
+                <ResponsiveContainer width="100%" height={200}>
                   <LineChart data={latencyData}>
-                    <CartesianGrid strokeDasharray="2 4" stroke="rgba(30,35,52,0.8)" />
-                    <XAxis dataKey="t" tick={{ fontSize: 9, fill: '#4a566e', fontFamily: 'IBM Plex Mono' }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 9, fill: '#4a566e', fontFamily: 'IBM Plex Mono' }} axisLine={false} tickLine={false} width={36} />
+                    <CartesianGrid strokeDasharray="2 4" stroke="#1E1E20" />
+                    <XAxis dataKey="t" tick={{ fontSize: 10, fill: '#71717A', fontFamily: 'Inter' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: '#71717A', fontFamily: 'Inter' }} axisLine={false} tickLine={false} width={36} />
                     <Tooltip content={<TT />} />
-                    <Line type="monotone" dataKey="ms" stroke="#d4f43c" strokeWidth={1.5} dot={false} name="ms" />
+                    <Line type="monotone" dataKey="ms" stroke="#059669" strokeWidth={2} dot={false} name="ms" />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </motion.div>
 
             {/* Corrections pie */}
-            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, type: 'spring', stiffness: 400, damping: 30 }}
               className="panel overflow-hidden">
-              <div className="px-4 py-3 border-b border-border">
-                <p className="text-[10px] font-mono uppercase tracking-widest text-ghost">Correction Categories</p>
-                <p className="text-[9px] font-mono text-dim mt-0.5">From reviewer feedback</p>
+              <div className="px-5 py-4 border-b border-[#1E1E20]">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-flint">Correction Categories</p>
+                <p className="text-[10px] text-slate mt-1">From reviewer feedback</p>
               </div>
-              <div className="p-4">
+              <div className="p-5">
                 {catData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={180}>
+                  <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
-                      <Pie data={catData} cx="50%" cy="50%" outerRadius={70} dataKey="value"
+                      <Pie data={catData} cx="50%" cy="50%" outerRadius={80} dataKey="value"
                         label={({ name, percent }) => `${name} ${(percent*100).toFixed(0)}%`}
                         labelLine={false}
-                        style={{ fontSize: 9, fontFamily: 'IBM Plex Mono' }}>
+                        style={{ fontSize: 10, fontFamily: 'Inter', fontWeight: 500, fill: '#FAFAFA' }}>
                         {catData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                       </Pie>
                       <Tooltip content={<TT />} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="h-44 flex flex-col items-center justify-center gap-2">
-                    <AlertTriangle className="w-5 h-5" style={{ color: '#2a3044' }} />
-                    <p className="text-[10px] font-mono text-dim">No corrections yet</p>
-                    <p className="text-[9px] font-mono text-muted">Submit feedback on classified results to see trends</p>
+                  <div className="h-48 flex flex-col items-center justify-center gap-3">
+                    <AlertTriangle className="w-6 h-6 text-slate opacity-50" />
+                    <p className="text-[12px] font-medium text-slate">No corrections yet</p>
+                    <p className="text-[11px] text-dim text-center max-w-[200px]">Submit feedback on classified results to see trends</p>
                   </div>
                 )}
               </div>
@@ -152,48 +152,57 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Corrections table */}
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, type: 'spring', stiffness: 400, damping: 30 }}
             className="panel overflow-hidden">
-            <div className="px-4 py-3 border-b border-border">
-              <p className="text-[10px] font-mono uppercase tracking-widest text-ghost">Recent Corrections</p>
-              <p className="text-[9px] font-mono text-dim mt-0.5">Cases where the LLM was corrected by a reviewer</p>
+            <div className="px-5 py-4 border-b border-[#1E1E20]">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-flint">Recent Corrections</p>
+              <p className="text-[10px] text-slate mt-1">Cases where the LLM was corrected by a reviewer</p>
             </div>
             {analytics?.recent_misclassifications?.length > 0 ? (
-              <table className="dt">
-                <thead>
-                  <tr><th>Complaint ID</th><th>Input</th><th>Cat</th><th>Urgency</th><th>Note</th><th>Date</th></tr>
-                </thead>
-                <tbody>
-                  {analytics.recent_misclassifications.map((r, i) => (
-                    <tr key={i}>
-                      <td className="text-violet text-[9px]">{r.complaint_id}</td>
-                      <td className="max-w-[180px]"><p className="text-[10px] text-dim line-clamp-1">{r.input_text || '—'}</p></td>
-                      <td style={{ color: '#d4f43c' }} className="text-[10px]">{r.correct_cat || '—'}</td>
-                      <td style={{ color: '#f5a623' }} className="text-[10px]">{r.correct_urg || '—'}</td>
-                      <td className="max-w-[140px]"><p className="text-[10px] text-dim line-clamp-1">{r.reviewer_note || '—'}</p></td>
-                      <td className="text-[9px] text-muted whitespace-nowrap">{r.created_at?.slice(0,10) || '—'}</td>
+              <div className="overflow-x-auto">
+                <table className="dt w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#1E1E20] bg-[#0A0A0B]">
+                      <th className="px-5 py-3 text-[10px] font-medium uppercase tracking-wider text-flint">Complaint ID</th>
+                      <th className="px-5 py-3 text-[10px] font-medium uppercase tracking-wider text-flint">Input</th>
+                      <th className="px-5 py-3 text-[10px] font-medium uppercase tracking-wider text-flint">Cat</th>
+                      <th className="px-5 py-3 text-[10px] font-medium uppercase tracking-wider text-flint">Urgency</th>
+                      <th className="px-5 py-3 text-[10px] font-medium uppercase tracking-wider text-flint">Note</th>
+                      <th className="px-5 py-3 text-[10px] font-medium uppercase tracking-wider text-flint">Date</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-[#1E1E20]">
+                    {analytics.recent_misclassifications.map((r, i) => (
+                      <tr key={i} className="hover:bg-[#121214] transition-colors">
+                        <td className="px-5 py-3 text-[#818CF8] text-[11px] font-mono">{r.complaint_id}</td>
+                        <td className="px-5 py-3 max-w-[200px]"><p className="text-[12px] text-slate line-clamp-1">{r.input_text || '—'}</p></td>
+                        <td className="px-5 py-3 text-[12px] text-quartz font-medium">{r.correct_cat || '—'}</td>
+                        <td className="px-5 py-3 text-[12px] text-[#D97706]">{r.correct_urg || '—'}</td>
+                        <td className="px-5 py-3 max-w-[160px]"><p className="text-[12px] text-slate line-clamp-1">{r.reviewer_note || '—'}</p></td>
+                        <td className="px-5 py-3 text-[11px] text-slate font-mono whitespace-nowrap">{r.created_at?.slice(0,10) || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
-              <div className="py-10 text-center">
-                <p className="text-[10px] font-mono text-dim">No corrections recorded. Use thumbs-down on results to submit feedback.</p>
+              <div className="py-12 text-center">
+                <p className="text-[12px] font-medium text-slate">No corrections recorded. Use thumbs-down on results to submit feedback.</p>
               </div>
             )}
           </motion.div>
 
           {/* Config grid */}
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, type: 'spring', stiffness: 400, damping: 30 }}
             className="panel overflow-hidden">
-            <div className="px-4 py-3 border-b border-border">
-              <p className="text-[10px] font-mono uppercase tracking-widest text-ghost">Retrieval Configuration</p>
+            <div className="px-5 py-4 border-b border-[#1E1E20]">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-flint">Retrieval Configuration</p>
             </div>
-            <div className="p-4 grid grid-cols-2 lg:grid-cols-4 gap-2">
+            <div className="p-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
               {CONFIG_ROWS.map(({ k, v }) => (
-                <div key={k} className="panel px-3 py-2">
-                  <p className="text-[9px] font-mono text-dim mb-0.5 uppercase tracking-widest">{k}</p>
-                  <p className="text-[11px] font-mono" style={{ color: '#d4f43c' }}>{v}</p>
+                <div key={k} className="panel px-4 py-3 bg-[#0A0A0B]">
+                  <p className="text-[10px] font-medium text-slate mb-1 uppercase tracking-wider">{k}</p>
+                  <p className="text-[12px] font-medium text-quartz">{v}</p>
                 </div>
               ))}
             </div>
