@@ -2,53 +2,58 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  Zap, Layers, BookOpen, BarChart3, Database, Activity,
-  Cpu, Server, ArrowRight, BrainCircuit, Clock, RefreshCw, Trash2,
+  Zap, Layers, BookOpen, BarChart3, Activity,
+  Cpu, Server, ArrowRight, Clock, RefreshCw, Trash2, Database,
 } from 'lucide-react'
 import { StatBox, Tag, Spinner } from '../components/ui'
 import { getStats, getHealth, getCacheInfo, getFewShotExamples, refreshFewShot, clearCache } from '../api'
 
+const SPRING = { type: 'spring', stiffness: 300, damping: 30 }
+
 const ACTIONS = [
-  { to: '/classify',  icon: Zap,      label: 'Classify',       sub: 'Single complaint',       accent: '#FAFAFA' },
-  { to: '/batch',     icon: Layers,   label: 'Batch',          sub: 'Up to 50 at once',       accent: '#4F46E5' },
-  { to: '/knowledge', icon: BookOpen, label: 'Knowledge',      sub: 'Manage corpus',          accent: '#D97706' },
-  { to: '/analytics', icon: BarChart3,label: 'Analytics',      sub: 'Accuracy & latency',     accent: '#059669' },
+  { to: '/classify', icon: Zap, label: 'Classify', sub: 'Single complaint' },
+  { to: '/batch', icon: Layers, label: 'Batch', sub: 'Up to 50 at once' },
+  { to: '/knowledge', icon: BookOpen, label: 'Knowledge', sub: 'Manage corpus' },
+  { to: '/analytics', icon: BarChart3, label: 'Analytics', sub: 'Accuracy and latency' },
 ]
 
-const PIPE = [
-  { label: 'Query',      color: '#71717A' },
-  { label: '→',          arrow: true },
-  { label: 'BM25',       color: '#4F46E5' },
-  { label: '+',          arrow: true },
-  { label: 'Dense',      color: '#059669' },
-  { label: '→',          arrow: true },
-  { label: 'RRF',        color: '#D97706' },
-  { label: '→',          arrow: true },
-  { label: 'Re-rank',    color: '#E11D48' },
-  { label: '→',          arrow: true },
-  { label: 'HyDE',       color: '#4F46E5' },
-  { label: '→',          arrow: true },
-  { label: 'LLM',        color: '#FAFAFA' },
-  { label: '→',          arrow: true },
-  { label: 'JSON',       color: '#71717A' },
-]
+const PIPE = ['Query', 'BM25', 'Dense', 'RRF', 'Re-rank', 'HyDE', 'LLM', 'Report']
 
-function Row({ label, value, accent = '#A1A1AA' }) {
+function Row({ label, value, tone = 'var(--text-secondary)' }) {
   return (
-    <div className="flex items-center justify-between py-2.5 border-b last:border-0" style={{ borderColor: '#1E1E20' }}>
-      <p className="text-[11px] font-medium text-flint uppercase tracking-wider">{label}</p>
-      <p className="text-[12px] font-medium" style={{ color: accent }}>{value}</p>
+    <div className="flex items-center justify-between border-b py-3 last:border-0" style={{ borderColor: 'var(--edge-soft)' }}>
+      <p className="label">{label}</p>
+      <p className="type-caption numeric font-medium" style={{ color: tone }}>{value}</p>
+    </div>
+  )
+}
+
+function ServiceRow({ label, ok, icon: Icon, detail }) {
+  return (
+    <div className="grid grid-cols-[8px_20px_1fr_auto] items-center gap-3 px-4 py-4">
+      <motion.span
+        className="h-2 w-2 rounded-full"
+        style={{ background: ok ? 'var(--accent)' : 'var(--danger)' }}
+        animate={{ scale: ok ? [1, 1.18, 1] : 1 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 18, repeat: ok ? Infinity : 0, repeatType: 'mirror' }}
+      />
+      <Icon className="h-5 w-5 text-flint" />
+      <div className="min-w-0">
+        <p className="type-caption font-semibold text-ink">{label}</p>
+        <p className="type-micro truncate text-flint">{detail}</p>
+      </div>
+      <span className="type-micro numeric" style={{ color: ok ? 'var(--accent)' : 'var(--danger)' }}>{ok ? 'OK' : 'ERR'}</span>
     </div>
   )
 }
 
 export default function DashboardPage() {
-  const [stats, setStats]         = useState(null)
-  const [health, setHealth]       = useState(null)
-  const [cache, setCache]         = useState(null)
-  const [fewShot, setFewShot]     = useState(null)
+  const [stats, setStats] = useState(null)
+  const [health, setHealth] = useState(null)
+  const [cache, setCache] = useState(null)
+  const [fewShot, setFewShot] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
-  const [clearing, setClearing]   = useState(false)
+  const [clearing, setClearing] = useState(false)
 
   const load = async () => {
     await Promise.allSettled([
@@ -73,195 +78,152 @@ export default function DashboardPage() {
     setClearing(false)
   }
 
+  const cacheTotal = (stats?.cache_hits ?? 0) + (stats?.cache_misses ?? 0)
+  const cacheRate = stats ? Math.round((stats.cache_hits ?? 0) / (cacheTotal || 1) * 100) : null
+
   return (
-    <div className="px-8 py-8 max-w-6xl mx-auto">
-
-      {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }} 
-        className="mb-8 flex items-end justify-between border-b pb-5" style={{ borderColor: '#1E1E20' }}>
+    <div className="mx-auto max-w-6xl px-8 py-8">
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={SPRING} className="mb-8 flex items-end justify-between gap-6 border-b pb-4" style={{ borderColor: 'var(--edge-soft)' }}>
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#059669] animate-pulse" />
-            <p className="text-[10px] font-medium uppercase tracking-wider text-flint">System dashboard</p>
+          <div className="mb-2 flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full" style={{ background: 'var(--accent)' }} />
+            <p className="label">System cockpit</p>
           </div>
-          <h1 className="text-2xl font-semibold text-quartz tracking-tight">ResolveAI Overview</h1>
+          <h1 className="type-title">ResolveAI overview</h1>
         </div>
-        <button onClick={load} className="btn py-1.5">
-          <RefreshCw className="w-3.5 h-3.5" /> Refresh
-        </button>
+        <motion.button whileTap={{ scale: 0.97 }} transition={SPRING} onClick={load} className="btn">
+          <RefreshCw className="h-4 w-4" /> Refresh
+        </motion.button>
       </motion.div>
 
-      {/* KPI row */}
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, type: 'spring', stiffness: 400, damping: 30 }}
-        className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-        <StatBox label="Documents"       value={stats?.total_documents ?? '—'} accent="#FAFAFA" />
-        <StatBox label="Classified"      value={stats?.total_classifications ?? '—'} accent="#4F46E5" />
-        <StatBox label="Avg Latency"     value={stats ? `${stats.avg_processing_ms}ms` : '—'} accent="#D97706" />
-        <StatBox label="Cache Hit Rate"  value={stats ? `${Math.round(stats.cache_hits / (stats.cache_hits + stats.cache_misses || 1) * 100)}%` : '—'} accent="#059669" />
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING, delay: 0.04 }} className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatBox label="Documents" value={stats?.total_documents ?? '—'} />
+        <StatBox label="Classified" value={stats?.total_classifications ?? '—'} accent="var(--accent)" />
+        <StatBox label="Avg latency" value={stats ? `${stats.avg_processing_ms}ms` : '—'} accent="var(--warning)" />
+        <StatBox label="Cache hit rate" value={cacheRate != null ? `${cacheRate}%` : '—'} accent="var(--accent)" />
       </motion.div>
 
-      {/* Quick actions */}
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, type: 'spring', stiffness: 400, damping: 30 }} className="mb-8">
-        <p className="label mb-3">Quick actions</p>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {ACTIONS.map(({ to, icon: Icon, label, sub, accent }) => (
-            <Link key={to} to={to}>
-              <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}
-                className="panel p-5 cursor-pointer transition-colors hover:border-[#3F3F46] group"
-                style={{ borderLeftWidth: 2, borderLeftColor: accent + '30' }}
-                onMouseEnter={e => e.currentTarget.style.borderLeftColor = accent}
-                onMouseLeave={e => e.currentTarget.style.borderLeftColor = accent + '30'}>
-                <Icon className="w-4 h-4 mb-4" style={{ color: accent }} />
-                <p className="text-[13px] font-semibold text-quartz">{label}</p>
-                <p className="text-[11px] text-slate mt-1">{sub}</p>
-                <ArrowRight className="w-3.5 h-3.5 text-[#3F3F46] mt-4 group-hover:text-slate transition-colors" />
-              </motion.div>
-            </Link>
-          ))}
-        </div>
-      </motion.div>
-
-      <div className="grid lg:grid-cols-3 gap-4 mb-4">
-
-        {/* System status */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, type: 'spring', stiffness: 400, damping: 30 }}
-          className="panel overflow-hidden">
-          <div className="px-5 py-3.5 border-b" style={{ borderColor: '#1E1E20' }}>
-            <p className="text-[10px] font-medium uppercase tracking-wider text-flint">System status</p>
+      <div className="mb-8 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING, delay: 0.08 }} className="instrument p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <p className="label">Primary actions</p>
+            <Tag>ready</Tag>
           </div>
-          <div className="divide-y divide-[#1E1E20]">
-            {[
-              { label: 'Ollama LLM',  ok: health?.ollama_reachable,    icon: Cpu,      detail: stats?.llm_model ?? '—' },
-              { label: 'BM25 Index',  ok: health?.bm25_index_ready,    icon: Activity, detail: `${stats?.total_documents ?? 0} docs` },
-              { label: 'Vector DB',   ok: (health?.vector_db_count ?? 0) > 0, icon: Server,   detail: `${health?.vector_db_count ?? 0} vectors` },
-            ].map(({ label, ok, icon: Icon, detail }) => (
-              <div key={label} className="flex items-center gap-3 px-5 py-3.5">
-                <div className="relative w-2 h-2 shrink-0">
-                  <div className="absolute inset-0 rounded-full" style={{ background: ok ? '#059669' : '#E11D48' }} />
-                  {ok && <div className="absolute inset-0 rounded-full animate-ping opacity-40" style={{ background: '#059669' }} />}
-                </div>
-                <Icon className="w-4 h-4 shrink-0 text-slate" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-medium text-quartz">{label}</p>
-                  <p className="text-[10px] text-flint truncate mt-0.5">{detail}</p>
-                </div>
-                <span className="text-[10px] font-medium" style={{ color: ok ? '#059669' : '#E11D48' }}>{ok ? 'OK' : 'ERR'}</span>
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            {ACTIONS.map(({ to, icon: Icon, label, sub }) => (
+              <Link key={to} to={to}>
+                <motion.div whileTap={{ scale: 0.98 }} transition={SPRING} className="panel-quiet h-full p-4">
+                  <div className="mb-6 flex items-center justify-between">
+                    <Icon className="h-5 w-5" style={{ color: label === 'Classify' ? 'var(--accent)' : 'var(--text-muted)' }} />
+                    <ArrowRight className="h-4 w-4 text-flint" />
+                  </div>
+                  <p className="type-body font-semibold text-ink">{label}</p>
+                  <p className="type-caption mt-1 text-flint">{sub}</p>
+                </motion.div>
+              </Link>
             ))}
           </div>
         </motion.div>
 
-        {/* Cache info */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, type: 'spring', stiffness: 400, damping: 30 }}
-          className="panel overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: '#1E1E20' }}>
-            <p className="text-[10px] font-medium uppercase tracking-wider text-flint">Cache layer</p>
-            <button onClick={handleClear} disabled={clearing} className="btn btn-danger py-1 px-2.5 text-[10px]">
-              {clearing ? <Spinner size="sm" /> : <><Trash2 className="w-3 h-3" /> Clear</>}
-            </button>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING, delay: 0.12 }} className="instrument overflow-hidden">
+          <div className="border-b px-4 py-4" style={{ borderColor: 'var(--edge-soft)' }}>
+            <p className="label">System status</p>
           </div>
-          <div className="p-5 space-y-4">
-            {cache ? (
-              <>
-                <div>
-                  <div className="flex justify-between mb-1.5">
-                    <p className="label">Query Cache</p>
-                    <p className="text-[11px] font-medium" style={{ color: '#FAFAFA' }}>{Math.round((cache.query?.hit_rate ?? 0) * 100)}% hit</p>
-                  </div>
-                  <div className="h-1 bg-[#1E1E20] overflow-hidden rounded-full">
-                    <div className="h-full bg-brand rounded-full" style={{ width: `${Math.round((cache.query?.hit_rate ?? 0) * 100)}%`, transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }} />
-                  </div>
-                  <p className="text-[10px] text-flint mt-1.5">{cache.query?.size ?? 0} items · {cache.query?.hits ?? 0} hits</p>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-1.5">
-                    <p className="label">Embed Cache</p>
-                    <p className="text-[11px] font-medium" style={{ color: '#4F46E5' }}>{Math.round((cache.embed?.hit_rate ?? 0) * 100)}% hit</p>
-                  </div>
-                  <div className="h-1 bg-[#1E1E20] overflow-hidden rounded-full">
-                    <div className="h-full rounded-full" style={{ width: `${Math.round((cache.embed?.hit_rate ?? 0) * 100)}%`, background: '#4F46E5', transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }} />
-                  </div>
-                  <p className="text-[10px] text-flint mt-1.5">{cache.embed?.size ?? 0} items · {cache.embed?.hits ?? 0} hits</p>
-                </div>
-                <Row label="Backend" value={cache.query?.backend ?? 'in-process'} accent="#059669" />
-              </>
-            ) : (
-              <div className="flex items-center justify-center py-6"><Spinner /></div>
-            )}
-          </div>
-        </motion.div>
-
-        {/* Few-shot */}
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, type: 'spring', stiffness: 400, damping: 30 }}
-          className="panel overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: '#1E1E20' }}>
-            <p className="text-[10px] font-medium uppercase tracking-wider text-flint">Few-shot prompts</p>
-            <button onClick={handleRefresh} disabled={refreshing || !fewShot?.enabled} className="btn btn-outline-cyan py-1 px-2.5 text-[10px] disabled:opacity-30">
-              {refreshing ? <Spinner size="sm" /> : <><RefreshCw className="w-3 h-3" /> Refresh</>}
-            </button>
-          </div>
-          <div className="p-5">
-            {fewShot ? (
-              fewShot.enabled ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <p className="label">Active examples</p>
-                    <Tag color="#FAFAFA">{fewShot.count}</Tag>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-flint" />
-                    <p className="text-[11px] text-flint font-mono">
-                      Last: {fewShot.last_refresh ? new Date(fewShot.last_refresh).toLocaleTimeString() : 'Never'}
-                    </p>
-                  </div>
-                  {fewShot.examples?.length > 0 && (
-                    <div className="space-y-1 mt-3">
-                      {fewShot.examples.slice(0, 3).map((ex, i) => (
-                        <div key={i} className="px-3 py-2 border rounded text-[10px] font-mono text-slate line-clamp-1" style={{ borderColor: '#1E1E20' }}>
-                          {ex.slice(0, 80)}…
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-[11px] text-flint py-6 text-center">Disabled in settings</p>
-              )
-            ) : (
-              <div className="flex items-center justify-center py-6"><Spinner /></div>
-            )}
+          <div className="divide-y" style={{ borderColor: 'var(--edge-soft)' }}>
+            <ServiceRow label="Ollama LLM" ok={health?.ollama_reachable} icon={Cpu} detail={stats?.llm_model ?? '—'} />
+            <ServiceRow label="BM25 index" ok={health?.bm25_index_ready} icon={Activity} detail={`${stats?.total_documents ?? 0} docs`} />
+            <ServiceRow label="Vector DB" ok={(health?.vector_db_count ?? 0) > 0} icon={Server} detail={`${health?.vector_db_count ?? 0} vectors`} />
           </div>
         </motion.div>
       </div>
 
-      {/* Pipeline architecture */}
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, type: 'spring', stiffness: 400, damping: 30 }}
-        className="panel overflow-hidden">
-        <div className="px-5 py-3.5 border-b" style={{ borderColor: '#1E1E20' }}>
-          <p className="text-[10px] font-medium uppercase tracking-wider text-flint">Pipeline architecture</p>
-        </div>
-        <div className="p-5">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {PIPE.map(({ label, color, arrow }, i) => (
-              arrow
-                ? <span key={i} className="text-[11px] font-mono text-[#3F3F46]">{label}</span>
-                : <span key={i} className="text-[11px] font-mono px-3 py-1.5 rounded border"
-                    style={{ color, borderColor: color + '20', background: color + '08' }}>{label}</span>
-            ))}
+      <div className="mb-8 grid gap-4 lg:grid-cols-3">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING, delay: 0.16 }} className="instrument p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <p className="label">Cache layer</p>
+            <button onClick={handleClear} disabled={clearing} className="btn btn-danger h-8">
+              {clearing ? <Spinner size="sm" /> : <><Trash2 className="h-4 w-4" /> Clear</>}
+            </button>
           </div>
-          <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { k: 'Keyword Weight', v: stats?.keyword_weight ? `${Math.round(stats.keyword_weight*100)}%` : '35%' },
-              { k: 'Semantic Weight', v: stats?.semantic_weight ? `${Math.round(stats.semantic_weight*100)}%` : '65%' },
-              { k: 'Fusion',         v: 'RRF k=60' },
-              { k: 'Embed Model',    v: stats?.embedding_model?.split(' ')[0] ?? 'nomic-embed' },
-            ].map(({ k, v }) => (
-              <div key={k} className="panel px-4 py-3 bg-[#0A0A0B]">
-                <p className="label mb-1">{k}</p>
-                <p className="text-[12px] font-mono" style={{ color: '#FAFAFA' }}>{v}</p>
+          {cache ? (
+            <div className="space-y-4">
+              {[
+                { label: 'Query cache', data: cache.query },
+                { label: 'Embed cache', data: cache.embed },
+              ].map(({ label, data }) => {
+                const pct = Math.round((data?.hit_rate ?? 0) * 100)
+                return (
+                  <div key={label}>
+                    <div className="mb-2 flex justify-between">
+                      <p className="type-caption font-medium text-slate">{label}</p>
+                      <p className="type-caption numeric" style={{ color: 'var(--accent)' }}>{pct}%</p>
+                    </div>
+                    <div className="sbar"><motion.div className="sbar-fill" initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={SPRING} /></div>
+                    <p className="type-micro mt-2 text-flint">{data?.size ?? 0} items · {data?.hits ?? 0} hits</p>
+                  </div>
+                )
+              })}
+              <Row label="Backend" value={cache.query?.backend ?? 'in-process'} tone="var(--accent)" />
+            </div>
+          ) : (
+            <div className="flex justify-center py-8"><Spinner /></div>
+          )}
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING, delay: 0.2 }} className="instrument p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <p className="label">Few-shot prompts</p>
+            <button onClick={handleRefresh} disabled={refreshing || !fewShot?.enabled} className="btn h-8">
+              {refreshing ? <Spinner size="sm" /> : <><RefreshCw className="h-4 w-4" /> Refresh</>}
+            </button>
+          </div>
+          {fewShot ? (
+            fewShot.enabled ? (
+              <div className="space-y-4">
+                <Row label="Active examples" value={fewShot.count} tone="var(--accent)" />
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-flint" />
+                  <p className="type-caption text-flint">Last: {fewShot.last_refresh ? new Date(fewShot.last_refresh).toLocaleTimeString() : 'Never'}</p>
+                </div>
+                {fewShot.examples?.slice(0, 3).map((ex, i) => (
+                  <p key={i} className="panel-quiet type-caption truncate p-3 text-slate">{ex}</p>
+                ))}
               </div>
-            ))}
+            ) : (
+              <p className="type-caption py-8 text-center text-flint">Disabled in settings</p>
+            )
+          ) : (
+            <div className="flex justify-center py-8"><Spinner /></div>
+          )}
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING, delay: 0.24 }} className="instrument p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <p className="label">Retrieval mix</p>
+            <Database className="h-5 w-5 text-flint" />
           </div>
+          <Row label="Keyword weight" value={stats?.keyword_weight ? `${Math.round(stats.keyword_weight * 100)}%` : '35%'} />
+          <Row label="Semantic weight" value={stats?.semantic_weight ? `${Math.round(stats.semantic_weight * 100)}%` : '65%'} />
+          <Row label="Fusion" value="RRF k=60" tone="var(--accent)" />
+          <Row label="Embed model" value={stats?.embedding_model?.split(' ')[0] ?? 'nomic-embed'} />
+        </motion.div>
+      </div>
+
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING, delay: 0.28 }} className="instrument p-4">
+        <div className="mb-4 flex items-center justify-between">
+          <p className="label">Pipeline architecture</p>
+          <span className="type-micro text-flint">input to report</span>
+        </div>
+        <div className="grid gap-3 md:grid-cols-8">
+          {PIPE.map((label, i) => (
+            <div key={label} className="relative">
+              <div className="panel-quiet h-full p-3">
+                <p className="type-micro numeric text-flint">0{i + 1}</p>
+                <p className="type-caption mt-3 font-semibold text-ink">{label}</p>
+              </div>
+              {i < PIPE.length - 1 && <div className="absolute left-full top-1/2 hidden h-px w-3 md:block" style={{ background: 'var(--edge-strong)' }} />}
+            </div>
+          ))}
         </div>
       </motion.div>
     </div>
