@@ -6,6 +6,7 @@ import { getHealth } from '../api'
 
 export default function Layout() {
   const [health, setHealth] = useState(null)
+
   useEffect(() => {
     const poll = async () => { try { setHealth(await getHealth()) } catch {} }
     poll()
@@ -14,14 +15,16 @@ export default function Layout() {
   }, [])
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden" style={{ background: '#0A0A0B' }}>
-      {/* Subtle grid background */}
-      <div className="fixed inset-0 pointer-events-none z-0 grid-bg opacity-60" />
-
+    <div className="app-shell flex h-screen w-screen overflow-hidden">
+      <div className="field-map fixed inset-0 z-0 pointer-events-none" />
       <Sidebar health={health} />
-
       <main className="relative z-10 flex-1 overflow-y-auto">
-        <motion.div key="page" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+        <motion.div
+          key="page"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+        >
           <Outlet context={{ health }} />
         </motion.div>
       </main>
