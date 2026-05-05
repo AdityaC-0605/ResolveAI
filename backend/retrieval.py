@@ -54,7 +54,10 @@ class HybridRetriever:
 
     def __init__(self):
         self._ef = OllamaEmbeddingFunction()
-        self._client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
+        self._client = chromadb.PersistentClient(
+            path=settings.chroma_persist_dir,
+            settings=chromadb.config.Settings(anonymized_telemetry=False)
+        )
         self.collection = self._client.get_or_create_collection(
             name=settings.chroma_collection_name,
             metadata={"hnsw:space": "cosine"},
@@ -98,7 +101,7 @@ class HybridRetriever:
             if i not in existing:
                 nt.append(t); ni.append(i); nm.append(m)
         if nt:
-            self.collection.add(documents=nt, ids=ni, metadatas=nm)
+            self.collection.upsert(documents=nt, ids=ni, metadatas=nm)
             self._rebuild_async()
 
     def delete_documents(self, ids):

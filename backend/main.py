@@ -36,6 +36,7 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(name)s — %(message)s",
 )
 logger = logging.getLogger(__name__)
+logging.getLogger("chromadb").setLevel(logging.ERROR)
 
 _start_time = time.monotonic()
 _total_classifications = 0
@@ -247,6 +248,7 @@ async def classify_stream(complaint: ComplaintInput):
     async def gen() -> AsyncGenerator[str, None]:
         def sse(d): return f"data: {json.dumps(d)}\n\n"
         try:
+            complaint_id = f"COMP-{uuid.uuid4().hex[:8].upper()}"
             yield sse({"stage": "retrieval_start", "message": "Searching knowledge base…"})
 
             language_result = None
@@ -266,7 +268,12 @@ async def classify_stream(complaint: ComplaintInput):
 
             yield sse({"stage": "llm_start", "message": f"Analysing with {settings.ollama_llm_model}…"})
             clf = await llm_engine.classify(complaint.text, chunks)
-            yield sse({"stage": "complete", "classification": clf.model_dump()})
+
+            # Save to feedback store so feedback submissions can be matched
+            feedback_store.save_classification(complaint_id, complaint.text, clf.model_dump())
+            metrics.record_classification(clf.category, clf.urgency)
+
+            yield sse({"stage": "complete", "complaint_id": complaint_id, "classification": clf.model_dump()})
         except Exception as exc:
             logger.exception("Stream error")
             yield sse({"stage": "error", "detail": str(exc)})

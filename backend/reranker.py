@@ -63,7 +63,11 @@ class CrossEncoderReranker:
                 max_length=512,
                 # Device is auto-detected: CUDA > MPS > CPU
             )
-            logger.info("Cross-encoder loaded ✓ (device=%s)", self._model.model.device)
+            try:
+                device = next(self._model.model.parameters()).device
+            except Exception:
+                device = "unknown"
+            logger.info("Cross-encoder loaded ✓ (device=%s)", device)
         except ImportError:
             logger.warning(
                 "sentence-transformers not installed — falling back to TF-IDF re-ranker. "
