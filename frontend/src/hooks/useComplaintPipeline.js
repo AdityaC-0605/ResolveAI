@@ -10,11 +10,12 @@ export function useComplaintPipeline() {
   const [debug, setDebug]           = useState(null)
   const [error, setError]           = useState(null)
   const [translated, setTranslated] = useState(null)
+  const [complaintId, setComplaintId] = useState(null)
 
   const startPipeline = useCallback(async (text) => {
     setState('streaming'); setStage(null); setChunks(null)
     setResult(null); setChunkData([]); setDebug(null)
-    setError(null); setTranslated(null)
+    setError(null); setTranslated(null); setComplaintId(null)
 
     try {
       const res = await classifyStream(text)
@@ -42,7 +43,7 @@ export function useComplaintPipeline() {
               setDebug(ev.debug)
             }
             if (ev.stage === 'llm_start')          setStage('llm_start')
-            if (ev.stage === 'complete')  { setResult(ev.classification); setState('done') }
+            if (ev.stage === 'complete')  { setComplaintId(ev.complaint_id ?? null); setResult(ev.classification); setState('done') }
             if (ev.stage === 'error')     throw new Error(ev.detail)
           } catch (parseErr) { if (parseErr.message && !parseErr.message.includes('JSON')) throw parseErr }
         }
@@ -50,5 +51,5 @@ export function useComplaintPipeline() {
     } catch (err) { setError(err.message); setState('error') }
   }, [])
 
-  return { state, streamStage, chunksFound, result, chunks, debug, error, translated, startPipeline }
+  return { state, streamStage, chunksFound, result, chunks, debug, error, translated, complaintId, startPipeline }
 }
