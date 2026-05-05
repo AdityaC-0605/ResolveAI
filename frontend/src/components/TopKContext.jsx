@@ -3,58 +3,58 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Database, ChevronDown } from 'lucide-react'
 import { MethodTag } from './ui'
 
+const SPRING = { type: 'spring', stiffness: 300, damping: 30 }
+
 export default function TopKContext({ chunks = [], debug }) {
   const [expanded, setExpanded] = useState(null)
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }} className="panel overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-[#1E1E20]">
-        <div className="flex items-center gap-2.5">
-          <Database className="w-3.5 h-3.5" style={{ color: '#818CF8' }} />
-          <span className="text-[11px] font-medium uppercase tracking-wider text-flint">Context</span>
-          <span className="text-[10px] text-slate font-mono">top-{chunks.length}</span>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={SPRING} className="instrument overflow-hidden">
+      <div className="flex items-center justify-between border-b px-4 py-4" style={{ borderColor: 'var(--edge-soft)' }}>
+        <div className="flex items-center gap-3">
+          <Database className="h-4 w-4" style={{ color: 'var(--accent)' }} />
+          <span className="label">Context</span>
+          <span className="type-micro numeric text-flint">top-{chunks.length}</span>
         </div>
         {debug && (
-          <div className="flex gap-3 text-[10px] font-mono">
-            <span style={{ color: '#818CF8' }}>kw:{debug.keyword_hits}</span>
-            <span style={{ color: '#3B82F6' }}>sem:{debug.semantic_hits}</span>
-            {debug.reranked && <span style={{ color: '#D97706' }}>reranked</span>}
-            {debug.hyde_used && <span style={{ color: '#059669' }}>hyde</span>}
+          <div className="hidden gap-3 md:flex">
+            <span className="type-micro numeric text-flint">kw:{debug.keyword_hits}</span>
+            <span className="type-micro numeric text-flint">sem:{debug.semantic_hits}</span>
+            {debug.reranked && <span className="type-micro text-flint">reranked</span>}
+            {debug.hyde_used && <span className="type-micro" style={{ color: 'var(--accent)' }}>hyde</span>}
           </div>
         )}
       </div>
 
-      <div className="divide-y divide-[#1E1E20]">
+      <div className="divide-y" style={{ borderColor: 'var(--edge-soft)' }}>
         {chunks.map((c, i) => (
-          <div key={c.id || i} className="group">
-            <button onClick={() => setExpanded(expanded === i ? null : i)}
-              className="w-full flex items-start gap-3 px-5 py-4 text-left hover:bg-[#121214] transition-colors">
-              <span className="text-[11px] font-mono text-slate w-6 shrink-0 mt-0.5">{String(i+1).padStart(2,'0')}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2.5 mb-1.5">
-                  <span className="text-[10px] font-mono text-slate">{c.id}</span>
+          <div key={c.id || i}>
+            <button onClick={() => setExpanded(expanded === i ? null : i)} className="grid w-full grid-cols-[32px_1fr_auto] gap-3 px-4 py-4 text-left hover:bg-surface">
+              <span className="type-micro numeric text-flint">{String(i + 1).padStart(2, '0')}</span>
+              <div className="min-w-0">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <span className="type-micro numeric text-flint">{c.id}</span>
                   <MethodTag method={c.retrieval_method || 'fused'} />
-                  {c.metadata?.category && <span className="text-[10px] font-medium" style={{ color: '#818CF8' }}>{c.metadata.category}</span>}
+                  {c.metadata?.category && <span className="type-micro" style={{ color: 'var(--accent)' }}>{c.metadata.category}</span>}
                 </div>
-                <p className="text-[12px] font-medium text-quartz leading-relaxed line-clamp-2">{c.text || c.preview}</p>
+                <p className="type-caption line-clamp-2 font-medium text-ink">{c.text || c.preview}</p>
               </div>
-              <div className="shrink-0 text-right flex flex-col items-end">
-                <p className="text-[11px] font-mono" style={{ color: '#059669' }}>{typeof c.score === 'number' ? c.score.toFixed(4) : c.score}</p>
-                <ChevronDown className="w-4 h-4 text-slate mt-1.5 transition-transform group-hover:text-quartz" style={{ transform: expanded === i ? 'rotate(180deg)' : '' }} />
+              <div className="flex shrink-0 flex-col items-end">
+                <p className="type-micro numeric" style={{ color: 'var(--accent)' }}>{typeof c.score === 'number' ? c.score.toFixed(4) : c.score}</p>
+                <ChevronDown className="mt-2 h-4 w-4 text-flint" style={{ transform: expanded === i ? 'rotate(180deg)' : 'rotate(0deg)' }} />
               </div>
             </button>
 
             <AnimatePresence>
               {expanded === i && c.text && (
-                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                  exit={{ height: 0, opacity: 0 }} className="overflow-hidden bg-[#0A0A0B]">
-                  <div className="px-5 pb-4 pt-1 pl-[3.25rem]">
-                    <div className="h-px bg-[#1E1E20] mb-3" />
-                    <p className="text-[12px] font-medium text-slate leading-relaxed">{c.text}</p>
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={SPRING} className="overflow-hidden" style={{ background: 'var(--bg-canvas)' }}>
+                  <div className="px-12 pb-4">
+                    <div className="mb-3 h-px" style={{ background: 'var(--edge-soft)' }} />
+                    <p className="type-caption text-slate">{c.text}</p>
                     {c.metadata && Object.keys(c.metadata).length > 0 && (
-                      <div className="flex gap-2 flex-wrap mt-3">
+                      <div className="mt-3 flex flex-wrap gap-2">
                         {Object.entries(c.metadata).map(([k, v]) => (
-                          <span key={k} className="text-[10px] font-mono px-2 py-1 border border-[#1E1E20] rounded text-slate bg-[#121214]">{k}:{v}</span>
+                          <span key={k} className="tag numeric">{k}:{v}</span>
                         ))}
                       </div>
                     )}

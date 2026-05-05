@@ -1,8 +1,22 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Clock, ListChecks, ChevronDown, ThumbsUp, ThumbsDown, Check, AlertTriangle, Timer } from 'lucide-react'
+import { Users, Clock, ListChecks, ChevronDown, ThumbsUp, ThumbsDown, Check, AlertTriangle, Timer, FileText } from 'lucide-react'
 import { UrgencyPill, SentimentBadge, ScoreBar } from './ui'
 import { submitFeedback } from '../api'
+
+const SPRING = { type: 'spring', stiffness: 300, damping: 30 }
+
+function ReportField({ label, children, icon: Icon }) {
+  return (
+    <div className="border-b pb-4 last:border-b-0 last:pb-0" style={{ borderColor: 'var(--edge-soft)' }}>
+      <div className="mb-2 flex items-center gap-2">
+        {Icon && <Icon className="h-4 w-4 text-flint" />}
+        <p className="label">{label}</p>
+      </div>
+      {children}
+    </div>
+  )
+}
 
 export default function StructuredOutput({ classification: c, timing, complaintId }) {
   const [fbSent, setFbSent] = useState(false)
@@ -16,137 +30,114 @@ export default function StructuredOutput({ classification: c, timing, complaintI
     setFbLoading(false)
   }
 
-  const confColor = c.confidence >= 0.8 ? '#059669' : c.confidence >= 0.6 ? '#D97706' : '#E11D48'
+  const confColor = c.confidence >= 0.8 ? 'var(--accent)' : c.confidence >= 0.6 ? 'var(--warning)' : 'var(--danger)'
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }} className="panel overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-[#1E1E20]"
-        style={{ borderLeftWidth: 3, borderLeftColor: '#059669' }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-2 h-2 rounded-full bg-[#059669] animate-pulse" />
-          <span className="text-[11px] font-medium uppercase tracking-wider text-flint">Classification</span>
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={SPRING} className="instrument overflow-hidden">
+      <div className="flex items-center justify-between border-b px-4 py-4" style={{ borderColor: 'var(--edge-soft)' }}>
+        <div className="flex items-center gap-3">
+          <FileText className="h-5 w-5" style={{ color: 'var(--accent)' }} />
+          <span className="label">Classification report</span>
         </div>
         <div className="flex items-center gap-4">
           {c.escalate_to_human && (
-            <span className="flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded border"
-              style={{ color: '#D97706', borderColor: '#D9770630', background: '#D9770608' }}>
-              <AlertTriangle className="w-3 h-3" /> ESCALATE
+            <span className="tag" style={{ color: 'var(--warning)' }}>
+              <AlertTriangle className="h-4 w-4" /> Escalate
             </span>
           )}
           {timing && (
-            <span className="text-[11px] font-mono text-slate flex items-center gap-1.5">
-              <Timer className="w-3.5 h-3.5" />{Math.round(timing)}ms
+            <span className="type-caption numeric flex items-center gap-2 text-slate">
+              <Timer className="h-4 w-4" />{Math.round(timing)}ms
             </span>
           )}
         </div>
       </div>
 
-      <div className="p-5 space-y-6">
-        {/* Category row */}
-        <div className="flex items-start justify-between gap-5">
+      <div className="grid gap-6 p-6 lg:grid-cols-[1fr_220px]">
+        <div className="space-y-4">
+          <ReportField label="Category">
+            <h2 className="type-title">{c.category}</h2>
+            <p className="type-body mt-1" style={{ color: 'var(--accent)' }}>{c.subcategory}</p>
+          </ReportField>
+
+          <ReportField label="Summary">
+            <p className="type-body font-medium text-ink">{c.summary}</p>
+          </ReportField>
+
+          <ReportField label="Action plan" icon={ListChecks}>
+            <div className="space-y-3">
+              {c.action_items?.map((a, i) => (
+                <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ ...SPRING, delay: i * 0.04 }} className="grid grid-cols-[32px_1fr] gap-3">
+                  <span className="type-micro numeric flex h-8 w-8 items-center justify-center rounded-md" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <p className="type-caption font-medium text-slate">{a}</p>
+                </motion.div>
+              ))}
+            </div>
+          </ReportField>
+
           <div>
-            <p className="label mb-1.5">Category</p>
-            <p className="text-xl font-medium text-quartz tracking-tight leading-none">{c.category}</p>
-            <p className="text-[12px] mt-1" style={{ color: '#818CF8' }}>{c.subcategory}</p>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <UrgencyPill level={c.urgency} />
-            <SentimentBadge sentiment={c.sentiment} />
+            <button onClick={() => setShowR(r => !r)} className="label mb-2 flex cursor-pointer items-center gap-2 hover:text-ink">
+              <ChevronDown className="h-4 w-4" style={{ transform: showReasoning ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+              Reasoning chain
+            </button>
+            <AnimatePresence>
+              {showReasoning && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={SPRING} className="overflow-hidden">
+                  <div className="panel-quiet p-4">
+                    <p className="type-caption whitespace-pre-wrap text-slate">{c.reasoning}</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
-        {/* Confidence bar */}
-        <div>
-          <div className="flex justify-between mb-2">
-            <p className="label">Confidence</p>
-            <span className="text-[12px] font-mono font-medium" style={{ color: confColor }}>
-              {Math.round(c.confidence * 100)}%
-            </span>
+        <aside className="space-y-4">
+          <div className="panel-quiet p-4">
+            <div className="mb-4 flex items-center justify-between">
+              <p className="label">Confidence</p>
+              <span className="type-caption numeric font-semibold" style={{ color: confColor }}>{Math.round(c.confidence * 100)}%</span>
+            </div>
+            <ScoreBar value={c.confidence} color={confColor} />
           </div>
-          <ScoreBar value={c.confidence} color={confColor} />
-        </div>
 
-        {/* Assignment */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="panel px-4 py-3 bg-[#0A0A0B]">
-            <p className="label mb-1.5">Team</p>
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4" style={{ color: '#818CF8' }} />
-              <p className="text-[12px] font-medium text-quartz">{c.assigned_team}</p>
+          <div className="panel-quiet p-4">
+            <p className="label mb-3">Signals</p>
+            <div className="flex flex-wrap gap-2">
+              <UrgencyPill level={c.urgency} />
+              <SentimentBadge sentiment={c.sentiment} />
             </div>
           </div>
-          <div className="panel px-4 py-3 bg-[#0A0A0B]">
-            <p className="label mb-1.5">SLA</p>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" style={{ color: '#3B82F6' }} />
-              <p className="text-[12px] font-medium text-quartz">{c.estimated_resolution_hours}h</p>
-            </div>
+
+          <div className="panel-quiet space-y-4 p-4">
+            <ReportField label="Team" icon={Users}>
+              <p className="type-caption font-semibold text-ink">{c.assigned_team}</p>
+            </ReportField>
+            <ReportField label="SLA" icon={Clock}>
+              <p className="type-caption numeric font-semibold text-ink">{c.estimated_resolution_hours}h</p>
+            </ReportField>
           </div>
-        </div>
+        </aside>
+      </div>
 
-        {/* Summary */}
-        <div className="px-4 py-3 border border-[#1E1E20] rounded" style={{ borderLeftColor: '#059669', borderLeftWidth: 3, background: 'rgba(5,150,105,0.03)' }}>
-          <p className="label mb-1.5">Summary</p>
-          <p className="text-[13px] font-medium text-quartz leading-relaxed">{c.summary}</p>
-        </div>
-
-        {/* Reasoning */}
-        <div>
-          <button onClick={() => setShowR(r => !r)}
-            className="flex items-center gap-2 label mb-2 hover:text-quartz transition-colors cursor-pointer">
-            <ChevronDown className="w-4 h-4 transition-transform" style={{ transform: showReasoning ? 'rotate(180deg)' : '' }} />
-            Reasoning chain
-          </button>
-          <AnimatePresence>
-            {showReasoning && (
-              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                <div className="panel px-4 py-3 bg-[#0A0A0B]">
-                  <p className="text-[12px] font-medium text-slate leading-relaxed whitespace-pre-wrap">{c.reasoning}</p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Actions */}
-        <div>
-          <p className="label mb-3 flex items-center gap-2"><ListChecks className="w-4 h-4" /> Actions</p>
-          <div className="space-y-1.5">
-            {c.action_items?.map((a, i) => (
-              <motion.div key={i} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + i * 0.05, type: 'spring', stiffness: 400, damping: 30 }}
-                className="flex items-start gap-3 px-4 py-3 border border-[#1E1E20] rounded bg-[#0A0A0B]">
-                <span className="text-[10px] font-mono w-5 shrink-0 mt-0.5" style={{ color: '#059669' }}>
-                  {String(i+1).padStart(2,'0')}
-                </span>
-                <p className="text-[12px] font-medium text-quartz">{a}</p>
-              </motion.div>
-            ))}
+      <div className="flex items-center justify-between border-t px-4 py-4" style={{ borderColor: 'var(--edge-soft)' }}>
+        <p className="label">Reviewer verdict</p>
+        {fbSent ? (
+          <span className="type-caption flex items-center gap-2 font-medium" style={{ color: 'var(--accent)' }}>
+            <Check className="h-4 w-4" /> Recorded
+          </span>
+        ) : (
+          <div className="flex gap-2">
+            <motion.button whileTap={{ scale: 0.97 }} transition={SPRING} disabled={fbLoading} onClick={() => send(true)} className="btn">
+              <ThumbsUp className="h-4 w-4" /> Yes
+            </motion.button>
+            <motion.button whileTap={{ scale: 0.97 }} transition={SPRING} disabled={fbLoading} onClick={() => send(false)} className="btn btn-danger">
+              <ThumbsDown className="h-4 w-4" /> No
+            </motion.button>
           </div>
-        </div>
-
-        {/* Feedback */}
-        <div className="flex items-center justify-between pt-4 border-t border-[#1E1E20]">
-          <p className="text-[11px] font-medium text-flint uppercase tracking-wider">Correct?</p>
-          {fbSent ? (
-            <span className="text-[11px] font-medium flex items-center gap-1.5" style={{ color: '#059669' }}>
-              <Check className="w-4 h-4" /> Recorded
-            </span>
-          ) : (
-            <div className="flex gap-2">
-              <button disabled={fbLoading} onClick={() => send(true)}
-                className="btn py-1.5 px-3 text-xs hover:border-[#059669]/50 hover:text-[#059669]">
-                <ThumbsUp className="w-3.5 h-3.5" /> Yes
-              </button>
-              <button disabled={fbLoading} onClick={() => send(false)}
-                className="btn btn-danger py-1.5 px-3 text-xs">
-                <ThumbsDown className="w-3.5 h-3.5" /> No
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </motion.div>
   )
